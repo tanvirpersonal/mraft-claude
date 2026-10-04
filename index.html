@@ -56,6 +56,7 @@ dl{grid-template-columns:repeat(6,auto);gap:2px 8px}dd{text-align:left}
 <button class="b" id="de">Delete</button>
 <button class="b" id="cl">Clear</button>
 <button class="b" id="sv">Save</button>
+<button class="b" id="launch-link" type="button">Launch</button>
 <button class="b" id="ld">Load</button>
 <button class="b" id="zi" aria-label="Zoom in">+</button>
 <button class="b" id="zo" aria-label="Zoom out">&minus;</button>
@@ -186,6 +187,7 @@ $('#de').onclick=()=>{if(sel){del(sel);render()}};
 $('#cl').onclick=()=>{parts=[];sel=null;render()};
 $('#zi').onclick=()=>zoom(1.25);$('#zo').onclick=()=>zoom(.8);
 const KEY='rocket-builder-blueprint';
+$('#launch-link').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(parts.map(p=>[p.u.id,p.x,p.y,parts.indexOf(p.tw)])));location.href='launch-pad.html'}catch{flash('Save failed')}};
 $('#sv').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(parts.map(p=>[p.u.id,p.x,p.y,parts.indexOf(p.tw)])));flash('Saved')}catch{flash('Saving is blocked in this browser')}};
 $('#ld').onclick=()=>{try{const a=JSON.parse(localStorage.getItem(KEY));if(!a)return flash('Nothing saved yet');
  parts=[];sel=null;a.forEach(([id,x,y])=>mk(U.find(u=>u.id==id),x,y));a.forEach((r,i)=>{if(r[3]>=0)parts[i].tw=parts[r[3]]});flash('Loaded');render()}catch{parts=[];flash('Could not read that save');render()}};
