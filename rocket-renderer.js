@@ -5,7 +5,7 @@ window.MRAFT_ROCKET_RENDERER = (() => {
  const W=u.w*s,H=u.h*s,k=u.k,[a,b]=COL[k],m=(...r)=>c.moveTo(...r),l=(...r)=>c.lineTo(...r),q=(...r)=>c.quadraticCurveTo(...r);
  c.save();c.translate(x,y);if(fl)c.scale(-1,1);
  const g=c.createLinearGradient(-W/2,0,W/2,0);g.addColorStop(0,b);g.addColorStop(.28,a);g.addColorStop(.72,a);g.addColorStop(1,b);
- c.fillStyle=g;c.strokeStyle='rgba(8,14,22,.85)';c.lineWidth=Math.max(1,s*.055);c.lineJoin='round';c.beginPath();
+ c.fillStyle=g;c.strokeStyle='rgba(8,14,22,.85)';c.lineWidth=Math.max(.15,s*.004);c.lineJoin='round';c.beginPath();
  if(k=='pod'){m(-W/2,H/2);l(-W/2,0);c.bezierCurveTo(-W/2,-H*.45,-W*.22,-H/2,0,-H/2);c.bezierCurveTo(W*.22,-H/2,W/2,-H*.45,W/2,0);l(W/2,H/2)}
  else if(k=='nose'){m(-W/2,H/2);q(-W/2,-H*.1,0,-H/2);q(W/2,-H*.1,W/2,H/2)}
  else if(k=='eng'){m(-W*.3,-H/2);l(W*.3,-H/2);l(W*.3,-H*.25);l(W/2,H/2);l(-W/2,H/2);l(-W*.3,-H*.25)}
@@ -29,7 +29,7 @@ window.MRAFT_ROCKET_RENDERER = (() => {
  }else if(k=='tank'){
   c.fillStyle='#d9622b';c.fillRect(-W/2,-H/2+H*.1,W,H*.07);c.fillRect(-W/2,H/2-H*.17,W,H*.07);
   c.strokeStyle='rgba(255,255,255,.38)';c.beginPath();c.moveTo(-W*.28,-H*.32);c.lineTo(-W*.28,H*.32);c.moveTo(W*.28,-H*.32);c.lineTo(W*.28,H*.32);c.stroke();
-  c.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<3;i++){c.beginPath();c.arc(-W*.34+i*W*.34,-H*.38,Math.max(1,s*.035),0,Math.PI*2);c.fill()}
+  c.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<3;i++){c.beginPath();c.arc(-W*.34+i*W*.34,-H*.38,s*.035,0,Math.PI*2);c.fill()}
  }else if(k=='eng'||k=='vac'){
   const bell=c.createLinearGradient(0,-H*.25,0,H/2);bell.addColorStop(0,'#56616b');bell.addColorStop(.45,'#252e37');bell.addColorStop(1,'#080d12');
   c.beginPath();if(k=='eng'){m(-W*.3,-H*.25);l(-W/2,H/2);l(W/2,H/2);l(W*.3,-H*.25)}else{m(-W*.25,-H*.3);q(-W*.3,H*.2,-W/2,H/2);l(W/2,H/2);q(W*.3,H*.2,W*.25,-H*.3)}
@@ -74,8 +74,8 @@ window.MRAFT_ROCKET_RENDERER = (() => {
   if(deployed){c.strokeStyle='#c4d0d9';c.lineWidth=Math.max(1,s*.055);c.beginPath();c.moveTo(-W*.12,0);c.lineTo(x1,0);c.stroke()}
  }
  // Fine seams, fasteners and hardware add scale without obscuring the silhouettes.
- c.save();c.lineWidth=Math.max(.7,s*.025);c.strokeStyle='rgba(27,39,50,.42)';c.fillStyle='rgba(255,255,255,.72)';
- const rivet=Math.max(.8,s*.028),dot=(px,py)=>{c.beginPath();c.arc(px,py,rivet,0,Math.PI*2);c.fill();c.stroke()};
+ c.save();c.lineWidth=s*.025;c.strokeStyle='rgba(27,39,50,.42)';c.fillStyle='rgba(255,255,255,.72)';
+ const rivet=s*.028,dot=(px,py)=>{c.beginPath();c.arc(px,py,rivet,0,Math.PI*2);c.fill();c.stroke()};
  if(k=='tank'){
   c.beginPath();c.moveTo(-W*.39,-H*.28);c.lineTo(W*.39,-H*.28);c.moveTo(-W*.39,H*.28);c.lineTo(W*.39,H*.28);c.stroke();
   for(const px of [-W*.38,W*.38])for(const py of [-H*.28,0,H*.28])dot(px,py);
