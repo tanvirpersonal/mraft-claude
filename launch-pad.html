@@ -309,7 +309,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1e3);last=now;const b=B[S.c
   if(launchReleased)sim(dt);particles(dt)
  }
  props();if(mapOn&&mapFollow){mapX=S.x;mapY=S.y}cx.setTransform(dpr,0,0,dpr,0,0);if(mapOn){mapv();window.__solarAfterMap?.()}else flight(now/1e3);
- if(now-hT>120){hT=now;hud();window.__solarHud?.()}if(mapOn){mapv();window.__solarAfterMap?.()}else flight(now/1e3);requestAnimationFrame(frame)}
+ if(now-hT>120){hT=now;hud();window.__solarHud?.()}if(mapOn){mapv();window.__solarAfterMap?.()}else flight(now/1e3);window.__solarFrame?.(now/1e3);requestAnimationFrame(frame)}
 function resize(){dpr=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr}
 addEventListener('resize',resize);
 addEventListener('keydown',e=>{K[e.code]=1;const c=e.code;if(!e.repeat){if(c=='Space')stage();else if(c=='KeyM')toggleMap();else if(c=='KeyP')chute();else if(c=='KeyZ')setThr(1);else if(c=='KeyX')setThr(0);else if(c=='Period')warp(1);else if(c=='Comma')warp(-1);else if(c=='KeyO')togglePause();else if(c=='KeyR')reset();else if(mapOn&&(c=='Equal'||c=='NumpadAdd'))mapZoom(1.25);else if(mapOn&&(c=='Minus'||c=='NumpadSubtract'))mapZoom(.8);else if(mapOn&&c=='KeyC')centerMap()}
@@ -327,7 +327,7 @@ document.addEventListener('fullscreenchange',()=>$('#fs').textContent=document.f
 [['bl','L'],['br','R']].forEach(([id,k])=>{const e=$('#'+id);e.onpointerdown=()=>hold[k]=1;['pointerup','pointerleave','pointercancel'].forEach(n=>e.addEventListener(n,()=>hold[k]=0))});
 resize();reset();requestAnimationFrame(frame);
 </script>
-<script src="./solar-system.js?v=3" onload="console.log('Solar System addon loaded')" onerror="console.error('Solar System addon failed to load')"></script>
+<script src="./solar-system.js?v=4" onload="console.log('Solar System addon loaded')" onerror="console.error('Solar System addon failed to load')"></script>
 
 </body>
 </html>
