@@ -326,5 +326,7 @@ document.addEventListener('fullscreenchange',()=>$('#fs').textContent=document.f
 [['bl','L'],['br','R']].forEach(([id,k])=>{const e=$('#'+id);e.onpointerdown=()=>hold[k]=1;['pointerup','pointerleave','pointercancel'].forEach(n=>e.addEventListener(n,()=>hold[k]=0))});
 resize();reset();requestAnimationFrame(frame);
 </script>
+<script src="solar-system.js"></script>
+
 </body>
 </html>
