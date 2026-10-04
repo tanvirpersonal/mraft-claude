@@ -303,64 +303,107 @@ function mapv(){
    const rp=solarRocketScreen();
    solarPanX+=W/2-rp[0];solarPanY+=H/2-rp[1];
  }
- cx.fillStyle='#02050a';cx.fillRect(0,0,W,H);
- // deep-space stars
+ const cx0=W*.50+solarPanX,cy0=H*.52+solarPanY;
+ cx.fillStyle='#000308';cx.fillRect(0,0,W,H);
+
+ // SFS-style deep-space background
  cx.fillStyle='rgba(255,255,255,.62)';
- for(let i=0;i<180;i++){const x=(i*83.17)%W,y=(i*47.31)%H,s=i%5===0?1.4:1;cx.fillRect(x,y,s,s)}
+ for(let i=0;i<220;i++){
+   const x=(i*97.31)%W,y=(i*47.83)%H,s=(i%17===0?1.5:1);
+   cx.fillRect(x,y,s,s);
+ }
+
  const roots=solarRootIndices();
- // orbit rings
+ const maxA=solarMaxOrbit();
+ const maxR=Math.min(W,H)*.42*solarZoom;
+ const orbitR=a=>30+Math.log1p(a/0.25)/Math.log1p(maxA/0.25)*Math.max(20,maxR-55);
+ const orbitPoint=(a,ang)=>[cx0+Math.cos(ang)*orbitR(a),cy0-Math.sin(ang)*orbitR(a)];
+
+ // Central Sun
+ const sg=cx.createRadialGradient(cx0,cy0,1,cx0,cy0,46);
+ sg.addColorStop(0,'#fff8c7');sg.addColorStop(.2,'#ffd36f');sg.addColorStop(.55,'rgba(255,165,50,.28)');sg.addColorStop(1,'rgba(255,120,30,0)');
+ cx.fillStyle=sg;cx.beginPath();cx.arc(cx0,cy0,46,0,TAU);cx.fill();
+ cx.fillStyle='#ffe396';cx.beginPath();cx.arc(cx0,cy0,7,0,TAU);cx.fill();
+ cx.fillStyle='#f3dfae';cx.font='11px system-ui,sans-serif';cx.fillText('Sun',cx0+12,cy0-10);
+
+ // Orbit paths for EVERY planet
  for(const i of roots){
-   const rr=Math.max(14,solarRadius(B[i].a));
-   cx.strokeStyle='rgba(96,132,160,.24)';cx.lineWidth=1;
-   cx.beginPath();cx.arc(W/2+solarPanX,H/2+solarPanY,rr,0,TAU);cx.stroke();
+   const q=B[i],rr=orbitR(q.a);
+   cx.strokeStyle=i===S.cb?'rgba(82,199,234,.65)':'rgba(79,116,150,.34)';
+   cx.lineWidth=i===S.cb?1.35:1;
+   cx.beginPath();cx.arc(cx0,cy0,rr,0,TAU);cx.stroke();
  }
- // Pluto orbit (display only; physics remains unchanged)
- const prr=Math.max(14,solarRadius(SOLAR_DISPLAY_PLUTO.a));
- cx.strokeStyle='rgba(96,132,160,.18)';cx.beginPath();cx.arc(W/2+solarPanX,H/2+solarPanY,prr,0,TAU);cx.stroke();
+ const plR=orbitR(SOLAR_DISPLAY_PLUTO.a);
+ cx.strokeStyle='rgba(79,116,150,.28)';cx.lineWidth=1;cx.setLineDash([4,4]);cx.beginPath();cx.arc(cx0,cy0,plR,0,TAU);cx.stroke();cx.setLineDash([]);
 
- // Sun
- const sun=[W/2+solarPanX,H/2+solarPanY];
- const sg=cx.createRadialGradient(sun[0],sun[1],1,sun[0],sun[1],42);
- sg.addColorStop(0,'rgba(255,247,190,1)');sg.addColorStop(.22,'rgba(255,202,90,.9)');sg.addColorStop(1,'rgba(255,130,30,0)');
- cx.fillStyle=sg;cx.beginPath();cx.arc(sun[0],sun[1],42,0,TAU);cx.fill();
- cx.fillStyle='#ffe18a';cx.beginPath();cx.arc(sun[0],sun[1],7,0,TAU);cx.fill();
- cx.fillStyle='#fff0bd';cx.font='11px system-ui,sans-serif';cx.fillText('Sun',sun[0]+12,sun[1]-8);
-
- const tx=(name,p,color='#a9bdca',sel=false)=>{
-   cx.fillStyle=sel?'#ffbf7a':color;cx.font=sel?'700 11px system-ui,sans-serif':'10px system-ui,sans-serif';
-   cx.fillText(name,p[0]+8,p[1]-7);
-   if(sel){cx.strokeStyle='#ffb15c';cx.lineWidth=1.6;cx.beginPath();cx.arc(p[0],p[1],Math.max(8,Math.min(12,solarRadius(1)*.08)),0,TAU);cx.stroke()}
- };
- // all planets
+ const positions=[];
  for(const i of roots){
-   const q=B[i],p=solarScreen(...solarAbs(i)),rr=Math.max(3.5,Math.min(9,2.7+Math.log1p(q.R/1e5)));
+   const q=B[i],abs=solarAbs(i),ang=Math.atan2(abs[1],abs[0]);
+   const p=orbitPoint(q.a,ang);positions.push({i,q,p});
+ }
+ // Pluto has no B entry, but is still a map body
+ const plAng=.72+UT*Math.sqrt(1e16/(SOLAR_DISPLAY_PLUTO.a**3));
+ const pl=orbitPoint(SOLAR_DISPLAY_PLUTO.a,plAng);
+ positions.push({i:-1,q:SOLAR_DISPLAY_PLUTO,p:pl});
+
+ const radius=q=>Math.max(3.5,Math.min(10,3.5+Math.log10(Math.max(1,q.R/1e5))*2.2));
+ for(const o of positions){
+   const q=o.q,p=o.p,r=radius(q),selected=o.i===S.cb;
+   // planet
    if(q.nm==='Saturn'){
-     cx.strokeStyle='rgba(229,207,163,.74)';cx.lineWidth=Math.max(1.5,rr*.32);cx.beginPath();cx.ellipse(p[0],p[1],rr*2.0,rr*.62,-.25,0,TAU);cx.stroke();
+     cx.save();cx.translate(p[0],p[1]);cx.rotate(-.22);
+     cx.strokeStyle='rgba(223,204,163,.8)';cx.lineWidth=Math.max(1.2,r*.30);
+     cx.beginPath();cx.ellipse(0,0,r*2.0,r*.62,0,0,TAU);cx.stroke();cx.restore();
    }
-   const g=cx.createRadialGradient(p[0]-rr*.35,p[1]-rr*.4,1,p[0],p[1],rr);
-   g.addColorStop(0,'#fff');g.addColorStop(.18,q.col);g.addColorStop(1,'#03070c');
-   cx.fillStyle=g;cx.beginPath();cx.arc(p[0],p[1],rr,0,TAU);cx.fill();
-   tx(q.nm,p);
+   const g=cx.createRadialGradient(p[0]-r*.35,p[1]-r*.4,1,p[0],p[1],r);
+   g.addColorStop(0,'#fff');g.addColorStop(.16,q.col||'#aaa');g.addColorStop(1,'#05080c');
+   cx.fillStyle=g;cx.beginPath();cx.arc(p[0],p[1],r,0,TAU);cx.fill();
+   if(selected){
+     cx.strokeStyle='#55d7f2';cx.lineWidth=1.7;cx.beginPath();cx.arc(p[0],p[1],r+5,0,TAU);cx.stroke();
+   }
+   const labelY=p[1]-r-6;
+   cx.fillStyle=selected?'#7ee7ff':'#b7c7d3';
+   cx.font=selected?'700 10px system-ui,sans-serif':'10px system-ui,sans-serif';
+   cx.fillText(q.nm,p[0]+r+6,labelY);
+   if(selected){cx.fillStyle='#65dcf6';cx.font='9px ui-monospace,monospace';cx.fillText('CURRENT',p[0]+r+6,labelY+12)}
  }
- // Pluto
- const pPl=solarScreen(SOLAR_DISPLAY_PLUTO.a,0); // replaced below with orbit point
- const pa=2.2e10,angPl=.72+UT*Math.sqrt(1e16/pa**3);
- const pp=[W/2+solarPanX+Math.cos(angPl)*solarRadius(pa),H/2+solarPanY-Math.sin(angPl)*solarRadius(pa)];
- cx.fillStyle=SOLAR_DISPLAY_PLUTO.col;cx.beginPath();cx.arc(pp[0],pp[1],4,0,TAU);cx.fill();tx('Pluto',pp);
 
- // Current rocket position
+ // Major moons as tiny satellite dots around their parent planet.
+ for(const i of roots){
+   const q=B[i];if(!q.moons)continue;
+   const parent=positions.find(o=>o.i===i);if(!parent)continue;
+   q.moons.forEach((m,j)=>{
+     const a=.7*j+UT/(m[2]||1)*.000001;
+     const rr=12+j*4,x=parent.p[0]+Math.cos(a)*rr,y=parent.p[1]-Math.sin(a)*rr;
+     cx.fillStyle=m[4]||'#aaa';cx.beginPath();cx.arc(x,y,1.7,0,TAU);cx.fill();
+   });
+ }
+
+ // Rocket marker
  const rp=solarRocketScreen();
  cx.save();cx.translate(rp[0],rp[1]);cx.rotate(-S.psi);
- cx.fillStyle='#edf6fb';cx.strokeStyle='#55d7f2';cx.lineWidth=1.2;
- cx.beginPath();cx.moveTo(0,-8);cx.lineTo(4,5);cx.lineTo(0,3);cx.lineTo(-4,5);cx.closePath();cx.fill();cx.stroke();
- cx.fillStyle='#ff8a42';cx.beginPath();cx.moveTo(-2.5,4);cx.lineTo(0,11);cx.lineTo(2.5,4);cx.closePath();cx.fill();cx.restore();
- cx.fillStyle='#8fe1ad';cx.font='700 10px system-ui,sans-serif';cx.fillText('ROCKET · '+B[S.cb].nm,rp[0]+9,rp[1]+14);
+ cx.fillStyle='#f3f7fb';cx.strokeStyle='#55d7f2';cx.lineWidth=1.2;
+ cx.beginPath();cx.moveTo(0,-9);cx.lineTo(4.5,5);cx.lineTo(0,3);cx.lineTo(-4.5,5);cx.closePath();cx.fill();cx.stroke();
+ cx.fillStyle='#ff8746';cx.beginPath();cx.moveTo(-2.4,4);cx.lineTo(0,12);cx.lineTo(2.4,4);cx.closePath();cx.fill();
+ cx.restore();
+ cx.fillStyle='#7fe2ad';cx.font='700 10px system-ui,sans-serif';cx.fillText('Rocket',rp[0]+9,rp[1]+4);
 
- // Current body's local orbit / connection indicator
- const cp=solarScreen(...solarAbs(S.cb));
- cx.strokeStyle='rgba(82,199,234,.38)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(cp[0],cp[1]);cx.lineTo(rp[0],rp[1]);cx.stroke();cx.setLineDash([]);
- cx.fillStyle='#d5e5ef';cx.font='10px ui-monospace,monospace';cx.fillText('FULL SOLAR SYSTEM · '+roots.length+' PLANETS + PLUTO',12,H-54);
- cx.fillStyle='#849eae';cx.fillText('Drag = pan · wheel = zoom · Fit = whole system · Follow = rocket',12,H-36);
+ // Header and legend
+ cx.fillStyle='#e8f3fa';cx.font='800 13px system-ui,sans-serif';cx.fillText('SOLAR SYSTEM',18,28);
+ cx.fillStyle='#8da7ba';cx.font='10px ui-monospace,monospace';cx.fillText('SUN → MERCURY → VENUS → EARTH → MARS → JUPITER → SATURN → URANUS → NEPTUNE → PLUTO',18,46);
+
+ // Planet index panel
+ const panelW=210,panelH=roots.length*22+38,px=18,py=H- panelH-48;
+ cx.fillStyle='rgba(4,10,17,.80)';cx.strokeStyle='rgba(155,190,215,.18)';
+ cx.beginPath();cx.roundRect(px,py,panelW,panelH,11);cx.fill();cx.stroke();
+ cx.fillStyle='#dceaf3';cx.font='700 10px system-ui,sans-serif';cx.fillText('PLANETS',px+10,py+17);
+ roots.forEach((i,n)=>{
+   const q=B[i],y=py+35+n*22;cx.fillStyle=q.col;cx.beginPath();cx.arc(px+14,y-3,3.2,0,TAU);cx.fill();
+   cx.fillStyle=i===S.cb?'#7ee7ff':'#b8cad5';cx.font='9px system-ui,sans-serif';cx.fillText(q.nm,px+25,y);
+ });
+ cx.fillStyle=SOLAR_DISPLAY_PLUTO.col;cx.beginPath();cx.arc(px+14,py+35+roots.length*22-3,3.2,0,TAU);cx.fill();
+ cx.fillStyle='#b8cad5';cx.fillText('Pluto',px+25,py+35+roots.length*22);
+ cx.fillStyle='#8099aa';cx.font='10px ui-monospace,monospace';cx.fillText('Drag pan · wheel zoom · Fit all · Follow rocket',18,H-18);
 }
 function hud(){const b=B[S.cb],r=Math.hypot(S.x,S.y),sp=Math.hypot(S.vx,S.vy),vr=(S.x*S.vx+S.y*S.vy)/r,el=elem(),km=m=>Math.abs(m)>=1e4?(m/1e3).toFixed(Math.abs(m)>=1e7?0:1)+' km':Math.round(m)+' m',
   F=act().reduce((s,p)=>s+p.F,0),fs=V.reduce((s,p)=>s+(p.s==0?p.f:0),0),stable=el.e<1&&el.pe>b.R+(b.atm?b.atm[2]:0);
