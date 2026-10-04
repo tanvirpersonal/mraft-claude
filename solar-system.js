@@ -18,6 +18,33 @@ const cyc=()=>{do{tg=tg>=B.length-1?-1:tg+1}while(tg===0||tg===S.cb);msg(tg<0?'T
 const bt=document.createElement('button');bt.id='tg';bt.textContent='Target';bt.title='Cycle navigation target (T)';bt.onclick=cyc;$('#mp').after(bt);
 $('#hint').textContent+=' · T target';
 addEventListener('keydown',e=>{if(e.code=='KeyT'&&!e.repeat)cyc()});
+let systemOverview=false;
+const sysBtn=document.createElement('button');
+sysBtn.id='sys';
+sysBtn.textContent='System';
+sysBtn.title='Show the full solar system';
+sysBtn.setAttribute('aria-pressed','false');
+bt.after(sysBtn);
+sysBtn.onclick=()=>{systemOverview=!systemOverview;sysBtn.setAttribute('aria-pressed',systemOverview);msg(systemOverview?'Full solar system overview':'Solar system overview closed.',1800)};
+function drawSystemOverview(){
+ const W=innerWidth,H=innerHeight,root=B.map((q,i)=>q.par===0&&i!==0?i:null).filter(i=>i!==null);
+ const panelW=Math.min(360,Math.max(290,W*.30)),panelH=Math.min(240,Math.max(190,H*.28)),x0=W-panelW-16,y0=16,cx0=x0+panelW*.52,cy0=y0+panelH*.57,R=panelW*.39;
+ const maxA=Math.max(...root.map(i=>B[i].a)),maxL=Math.log1p(maxA/1e9);
+ cx.save();cx.fillStyle='rgba(5,10,18,.9)';cx.strokeStyle='rgba(155,190,215,.28)';cx.lineWidth=1;
+ cx.beginPath();cx.roundRect(x0,y0,panelW,panelH,14);cx.fill();cx.stroke();
+ cx.fillStyle='#e7f2fb';cx.font='700 12px system-ui,sans-serif';cx.fillText('SOLAR SYSTEM',x0+14,y0+20);
+ cx.fillStyle='#8da7ba';cx.font='10px ui-monospace,monospace';cx.fillText('ALL PLANETS · LIVE ORBIT POSITIONS',x0+14,y0+35);
+ for(const i of root){
+  const a=B[i].a,rr=Math.log1p(a/1e9)/maxL*R,ang=Math.atan2(ap(i)[1],ap(i)[0]),ox=cx0+Math.cos(ang)*rr,oy=cy0+Math.sin(ang)*rr;
+  cx.strokeStyle='rgba(120,150,175,.16)';cx.beginPath();cx.arc(cx0,cy0,rr,0,TAU);cx.stroke();
+  cx.fillStyle=i===tg?'#ffb15c':B[i].col;cx.beginPath();cx.arc(ox,oy,Math.max(2.5,Math.min(7,B[i].R/2e5)),0,TAU);cx.fill();
+  cx.fillStyle=i===S.cb?'#8fe1ad':'#b7c7d3';cx.font='9px system-ui,sans-serif';cx.fillText(B[i].nm,ox+7,oy+3);
+ }
+ cx.fillStyle=B[0].col;cx.beginPath();cx.arc(cx0,cy0,5.5,0,TAU);cx.fill();
+ cx.fillStyle='#d9e8f2';cx.font='9px system-ui,sans-serif';cx.fillText('Sun',cx0+8,cy0+3);
+ cx.restore();
+}
+
 
 // 3. Sky: Sun, parent, siblings and moons drawn behind the terrain, lit from the Sun
 function sky(){
@@ -51,7 +78,7 @@ function plan(){
  let d=((ideal-cur)*Math.sign(dw))%TAU;d=(d+TAU)%TAU;
  const bd=c1<0?Math.abs(vi):c1===S.cb?Math.sqrt(vi*vi+2*B[c1].mu/rp)-Math.sqrt(B[c1].mu/rp):null;
  return s+'\nTRANSFER   PHASE '+dg(cur)+' / IDEAL '+dg(ideal)+'   |   WINDOW '+ft(d/Math.abs(dw))+(bd==null?'':'   |   BURN ~'+Math.round(bd)+' m/s')}
-window.__solarHud=()=>{const s=plan();if(s)hudEl.textContent+='\n'+s};
+window.__solarHud=()=>{const s=plan();if(s)hudEl.textContent+='\n'+s;if(systemOverview)drawSystemOverview()};
 
 // 5. Map: mark the target even when it is not one of the drawn bodies
 window.__solarAfterMap=()=>{if(tg<0||tg===S.cb)return;const a=ap(tg),m=ap(S.cb),x=innerWidth/2+(a[0]-m[0]-mapX)*zm,y=innerHeight/2-(a[1]-m[1]-mapY)*zm;
