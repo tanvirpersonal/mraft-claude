@@ -360,7 +360,7 @@ function mapv(){
  const cp=solarScreen(...solarAbs(S.cb));
  cx.strokeStyle='rgba(82,199,234,.38)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(cp[0],cp[1]);cx.lineTo(rp[0],rp[1]);cx.stroke();cx.setLineDash([]);
  cx.fillStyle='#d5e5ef';cx.font='10px ui-monospace,monospace';cx.fillText('FULL SOLAR SYSTEM · '+roots.length+' PLANETS + PLUTO',12,H-54);
- cx.fillStyle='#849eae';cx.fillText('M drag/pan · wheel zoom · Fit = whole system · Follow = rocket',12,H-36);
+ cx.fillStyle='#849eae';cx.fillText('Drag = pan · wheel = zoom · Fit = whole system · Follow = rocket',12,H-36);
 }
 function hud(){const b=B[S.cb],r=Math.hypot(S.x,S.y),sp=Math.hypot(S.vx,S.vy),vr=(S.x*S.vx+S.y*S.vy)/r,el=elem(),km=m=>Math.abs(m)>=1e4?(m/1e3).toFixed(Math.abs(m)>=1e7?0:1)+' km':Math.round(m)+' m',
   F=act().reduce((s,p)=>s+p.F,0),fs=V.reduce((s,p)=>s+(p.s==0?p.f:0),0),stable=el.e<1&&el.pe>b.R+(b.atm?b.atm[2]:0);
