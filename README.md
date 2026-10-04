@@ -1,49 +1,53 @@
 # MRAFT — Spacecraft Construction Simulator
 
-A browser-based spacecraft construction and test-flight simulator for GitHub Pages.
+MRAFT is a static, browser-based spacecraft construction and test-flight simulator for GitHub Pages.
 
-## Current functional loop
+## Current upgrade
 
-1. Open the builder.
-2. Choose fuel tanks, engines, structure and payload parts.
-3. Place parts into the workspace with attachment-node snapping.
-4. Select, drag and rotate parts.
-5. Shift-click while placing a part to create a mirrored symmetry pair.
-6. Inspect total mass, propellant, thrust, TWR, delta-v and center of mass.
-7. Assign parts to staging with the selected-part stage control.
-8. Save and reload the rocket through browser localStorage.
-9. Press **TEST LAUNCH**.
-10. Fly the constructed rocket using the same part/stage data used by the builder.
-11. Press **STAGE** or Space to advance configured stages; decouplers separate the lower stack.
+The project now uses one authoritative builder/flight implementation in `app.js`. The older duplicate builder implementation has been removed from `index.html`.
 
-## Development priority
+### Builder
+- Procedural spacecraft part rendering; no required image assets.
+- Stack attachment nodes with proximity snapping.
+- Symmetry pairs that remain mirrored while moving.
+- Move, rotate, duplicate and delete.
+- Live mass, propellant, thrust, TWR, delta-v, burn time, center of mass and center of thrust.
+- Explicit stage assignment and stage normalization.
+- Save/load using versioned localStorage blueprint data.
+- Responsive desktop and mobile layouts.
 
-```text
-FOUNDATION
-  ↓
-PART DATA
-  ↓
-BUILDER CANVAS
-  ↓
-ATTACHMENT
-  ↓
-SELECTION
-  ↓
-TRANSFORM
-  ↓
-SYMMETRY
-  ↓
-STAGING
-  ↓
-PHYSICS CALCULATIONS
-  ↓
-SAVE/LOAD
-  ↓
-TEST LAUNCH
-  ↓
-ADVANCED FEATURES
-  ↓
-POLISH
-```
+### Test flight
+- The same built rocket data is converted into the flight vehicle.
+- 2D translational physics with Earth gravity.
+- Variable thrust and fuel burn.
+- Atmospheric drag below the defined atmosphere boundary.
+- Attitude rotation with A/D.
+- Throttle with W/S or the on-screen slider.
+- Manual staging with Space.
+- Stage separation for stages containing a decoupler.
+- Altitude, velocity, TWR, fuel, apoapsis and periapsis readouts.
+- 1× / 5× / 20× time warp.
+- Ballistic trajectory preview.
 
-The project intentionally keeps the core implementation dependency-free: HTML, CSS and JavaScript with Canvas 2D. This makes it directly deployable as a static GitHub Pages application and leaves room to evolve the flight model and visual renderer without replacing the construction data model.
+## Engineering model
+
+The core uses SI units internally:
+- mass: kg
+- thrust: N
+- distance: m
+- velocity: m/s
+- time: s
+
+The UI converts these into rocket-friendly tonnes, kN and km.
+
+Delta-v uses the Tsiolkovsky rocket equation with stage-aware sequential mass accounting. Flight uses central-body gravity, an exponential atmosphere model and a simple drag approximation.
+
+## Roadmap
+
+Next high-value systems are:
+1. Proper hierarchical part/stack graph.
+2. Better stage separation geometry and child-stage detachment.
+3. RCS and rotational inertia.
+4. Maneuver nodes and patched-conic orbit map.
+5. Time-warp-safe orbital integration.
+6. Docking ports and persistent multi-vessel missions.
