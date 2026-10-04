@@ -1,3 +1,167 @@
+// MRAFT MASTER SOLAR MAP
+// This section owns the normal "Map" view in launch-pad.html.
+// It is intentionally independent from the optional 3D viewer below.
+(()=>{
+'use strict';
+if(window.__MRAFT_MASTER_SOLAR_MAP__)return;
+window.__MRAFT_MASTER_SOLAR_MAP__=true;
+
+const mapState={zoom:1,panX:0,panY:0,follow:false,lastOpen:false,target:-1};
+const ZMIN=.58,ZMAX=3;
+const synthetic={nm:'Pluto',a:2.2e10,R:1.2e5,col:'#c8b49a'};
+let maxOrbit=2.2e10;
+
+function roots(){
+  return B.map((q,i)=>q.par===0&&q.nm!=='Sun'?i:null).filter(i=>i!==null).sort((a,b)=>(B[a].a||0)-(B[b].a||0));
+}
+function absPos(i){
+  let x=0,y=0;
+  for(let k=i;k>0;k=B[k].par){const q=bp(k,UT);x+=q[0];y+=q[1]}
+  return [x,y];
+}
+function updateMax(){maxOrbit=Math.max(2.2e10,...roots().map(i=>B[i].a||0))}
+updateMax();
+
+function screenScale(){
+  return .42*Math.min(innerWidth,innerHeight)*mapState.zoom;
+}
+function radiusForAU(a){
+  const K=3e8,R=screenScale();
+  return 20+Math.log1p(a/K)/Math.log1p(maxOrbit/K)*Math.max(30,R-45);
+}
+function toScreen(x,y){
+  const d=Math.hypot(x,y);
+  if(d<1)return [innerWidth/2+mapState.panX,innerHeight/2+mapState.panY];
+  const rr=radiusForAU(d),a=Math.atan2(y,x);
+  return [innerWidth/2+mapState.panX+Math.cos(a)*rr,innerHeight/2+mapState.panY-Math.sin(a)*rr];
+}
+function bodyPosition(i){
+  const p=absPos(i);return toScreen(p[0],p[1]);
+}
+function syntheticPluto(){
+  const a=synthetic.a,ang=.52+UT*Math.sqrt(1e16/(a*a*a));
+  return [innerWidth/2+mapState.panX+Math.cos(ang)*radiusForAU(a),innerHeight/2+mapState.panY-Math.sin(ang)*radiusForAU(a)];
+}
+function setScaleUI(){
+  const e=document.querySelector('#map-scale');
+  if(e)e.textContent=mapState.zoom.toFixed(1)+'×';
+}
+function fit(){
+  mapState.zoom=1;mapState.panX=0;mapState.panY=0;mapState.follow=false;setScaleUI();
+}
+function zoomBy(f){
+  mapState.zoom=Math.max(ZMIN,Math.min(ZMAX,mapState.zoom*f));setScaleUI();
+}
+function toggleFollow(){mapState.follow=!mapState.follow;const e=document.querySelector('#map-center');if(e)e.setAttribute('aria-pressed',mapState.follow);}
+
+function drawLabel(name,x,y,current){
+  cx.fillStyle=current?'#70def7':'#b6c6d1';
+  cx.font=current?'700 10px system-ui,sans-serif':'10px system-ui,sans-serif';
+  cx.fillText(name,x+8,y-8);
+  if(current){cx.fillStyle='#56d8f3';cx.font='8px ui-monospace,monospace';cx.fillText('CURRENT',x+8,y+5)}
+}
+
+function drawPlanet(x,y,r,col,current){
+  const g=cx.createRadialGradient(x-r*.4,y-r*.42,1,x,y,r);
+  g.addColorStop(0,'#fff');g.addColorStop(.17,col);g.addColorStop(1,'#02060a');
+  cx.fillStyle=g;cx.beginPath();cx.arc(x,y,r,0,TAU);cx.fill();
+  if(current){cx.strokeStyle='#55d7f2';cx.lineWidth=1.7;cx.beginPath();cx.arc(x,y,r+5,0,TAU);cx.stroke()}
+}
+
+function frame(){
+  const open=document.querySelector('#mp')?.getAttribute('aria-pressed')==='true';
+  if(!open)return;
+  if(!mapState.lastOpen){fit();mapState.lastOpen=true}
+  if(mapState.follow){
+    const rp=rocketScreen();
+    mapState.panX+=(innerWidth/2-rp[0])*.12;
+    mapState.panY+=(innerHeight/2-rp[1])*.12;
+  }
+  const W=innerWidth,H=innerHeight,cx0=W/2+mapState.panX,cy0=H/2+mapState.panY;
+  cx.fillStyle='#000308';cx.fillRect(0,0,W,H);
+
+  cx.fillStyle='rgba(255,255,255,.6)';
+  for(let i=0;i<240;i++){const x=(i*83.17)%W,y=(i*47.31)%H,s=i%19===0?1.5:1;cx.fillRect(x,y,s,s)}
+
+  const rs=roots();
+  // orbit rings
+  for(const i of rs){
+    const rr=radiusForAU(B[i].a||0);
+    cx.strokeStyle=i===S.cb?'rgba(82,210,241,.55)':'rgba(76,110,142,.34)';
+    cx.lineWidth=i===S.cb?1.4:1;
+    cx.beginPath();cx.arc(cx0,cy0,rr,0,TAU);cx.stroke();
+  }
+  const ppr=radiusForAU(synthetic.a);
+  cx.strokeStyle='rgba(76,110,142,.3)';cx.setLineDash([4,4]);cx.beginPath();cx.arc(cx0,cy0,ppr,0,TAU);cx.stroke();cx.setLineDash([]);
+
+  // Sun
+  const glow=cx.createRadialGradient(cx0,cy0,1,cx0,cy0,45);
+  glow.addColorStop(0,'#fff9c6');glow.addColorStop(.2,'#ffd16f');glow.addColorStop(1,'rgba(255,130,30,0)');
+  cx.fillStyle=glow;cx.beginPath();cx.arc(cx0,cy0,45,0,TAU);cx.fill();
+  cx.fillStyle='#ffe28a';cx.beginPath();cx.arc(cx0,cy0,7,0,TAU);cx.fill();
+  cx.fillStyle='#e9dcb9';cx.font='11px system-ui';cx.fillText('Sun',cx0+12,cy0-9);
+
+  // Planets
+  for(const i of rs){
+    const q=B[i],p=bodyPosition(i),r=Math.max(3.6,Math.min(9,3.2+Math.log10(Math.max(1,q.R/1e5))*2));
+    if(q.nm==='Saturn'){
+      cx.save();cx.translate(p[0],p[1]);cx.rotate(-.22);cx.strokeStyle='rgba(226,204,159,.78)';cx.lineWidth=Math.max(1.2,r*.3);cx.beginPath();cx.ellipse(0,0,r*2,r*.62,0,0,TAU);cx.stroke();cx.restore()
+    }
+    drawPlanet(p[0],p[1],r,q.col||'#aaa',i===S.cb);
+    drawLabel(q.nm,p[0],p[1],i===S.cb);
+  }
+
+  const pp=syntheticPluto();drawPlanet(pp[0],pp[1],4,synthetic.col,false);drawLabel('Pluto',pp[0],pp[1],false);
+
+  // Major moons are shown near their parent, but remain tiny.
+  for(const i of rs){
+    const q=B[i],p=bodyPosition(i);if(!q.moons)continue;
+    q.moons.slice(0,5).forEach((m,j)=>{
+      const ang=UT/(m[5]||1000000)+j*1.2,rr=12+j*4;
+      cx.fillStyle=m.col||'#aaa';cx.beginPath();cx.arc(p[0]+Math.cos(ang)*rr,p[1]-Math.sin(ang)*rr*.7,1.5,0,TAU);cx.fill();
+    });
+  }
+
+  const rp=rocketScreen();
+  cx.save();cx.translate(rp[0],rp[1]);cx.rotate(-S.psi);
+  cx.fillStyle='#f2f6fa';cx.strokeStyle='#55d7f2';cx.lineWidth=1.2;
+  cx.beginPath();cx.moveTo(0,-9);cx.lineTo(4,5);cx.lineTo(0,3);cx.lineTo(-4,5);cx.closePath();cx.fill();cx.stroke();
+  cx.fillStyle='#ff8745';cx.beginPath();cx.moveTo(-2.3,4);cx.lineTo(0,11);cx.lineTo(2.3,4);cx.closePath();cx.fill();cx.restore();
+  cx.fillStyle='#7de1ad';cx.font='700 10px system-ui';cx.fillText('Rocket',rp[0]+10,rp[1]+3);
+
+  cx.fillStyle='#eef6fb';cx.font='800 13px system-ui';cx.fillText('SOLAR SYSTEM',18,28);
+  cx.fillStyle='#879eae';cx.font='9px ui-monospace,monospace';cx.fillText('MASTER ORBITAL MAP · '+rs.length+' PLANETS + PLUTO',18,45);
+
+  const boxX=18,boxY=H-270,boxW=178,boxH=240;
+  cx.fillStyle='rgba(4,9,15,.82)';cx.strokeStyle='rgba(155,190,215,.18)';cx.beginPath();cx.roundRect(boxX,boxY,boxW,boxH,11);cx.fill();cx.stroke();
+  cx.fillStyle='#dceaf3';cx.font='700 10px system-ui';cx.fillText('PLANETS',boxX+10,boxY+17);
+  rs.forEach((i,n)=>{const q=B[i],y=boxY+36+n*20;cx.fillStyle=q.col;cx.beginPath();cx.arc(boxX+13,y-3,3,0,TAU);cx.fill();cx.fillStyle=i===S.cb?'#71dff6':'#b8c8d2';cx.font='9px system-ui';cx.fillText(q.nm,boxX+24,y)});
+  const py=boxY+36+rs.length*20;cx.fillStyle=synthetic.col;cx.beginPath();cx.arc(boxX+13,py-3,3,0,TAU);cx.fill();cx.fillStyle='#b8c8d2';cx.fillText('Pluto',boxX+24,py);
+
+  if(!mapState.lastOpen)mapState.lastOpen=true;
+}
+function rocketScreen(){
+  const root=absPos(S.cb);const px=root[0]+S.x,py=root[1]+S.y;return toScreen(px,py);
+}
+
+window.__solarMapFrame=frame;
+window.__solarMapFit=fit;
+window.__solarMapZoom=zoomBy;
+window.__solarMapFollow=toggleFollow;
+
+const fitBtn=document.querySelector('#map-fit'),plus=document.querySelector('#map-plus'),minus=document.querySelector('#map-minus'),follow=document.querySelector('#map-center');
+fitBtn?.addEventListener('click',e=>{e.stopImmediatePropagation();fit()},true);
+plus?.addEventListener('click',e=>{e.stopImmediatePropagation();zoomBy(1.22)},true);
+minus?.addEventListener('click',e=>{e.stopImmediatePropagation();zoomBy(.82)},true);
+follow?.addEventListener('click',e=>{e.stopImmediatePropagation();toggleFollow()},true);
+
+let down=null;
+cv.addEventListener('pointerdown',e=>{if(document.querySelector('#mp')?.getAttribute('aria-pressed')!=='true')return;down={x:e.clientX,y:e.clientY,px:mapState.panX,py:mapState.panY};});
+cv.addEventListener('pointermove',e=>{if(!down)return;mapState.panX=down.px+(e.clientX-down.x);mapState.panY=down.py+(e.clientY-down.y);});
+cv.addEventListener('pointerup',()=>down=null);cv.addEventListener('pointercancel',()=>down=null);
+
+window.__solarMasterLoaded=true;
+})();
 // MRAFT 3D Solar-System Map
 // Standalone renderer. Loaded by launch-pad.html.
 // The rocket state is shared through localStorage key: mraft-solar-flight-state.
