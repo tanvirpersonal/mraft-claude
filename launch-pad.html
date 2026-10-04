@@ -296,6 +296,23 @@ function hud(){const b=B[S.cb],r=Math.hypot(S.x,S.y),sp=Math.hypot(S.vx,S.vy),vr
  hudEl.textContent=['FLIGHT DATA  /  '+b.nm.toUpperCase(),'ALTITUDE   '+km(r-b.R),'SPEED      '+Math.round(sp)+' m/s   |   VERT '+Math.round(vr)+' m/s','APOAPSIS   '+(el.e<1?km(el.ap-b.R):'ESCAPE')+'   |   PE '+km(el.pe-b.R),
   'THROTTLE   '+Math.round(S.thr*100)+'%   |   TWR '+(F?(F/(PR.m*b.mu/(r*r))).toFixed(2):'0.00'),'STAGING    '+(userStages.length?(userStageIndex<userStages.length?`${userStageIndex+1}/${userStages.length}`:'CORE'):'AUTO'),'STAGE FUEL '+fs.toFixed(1)+' t   |   DELTA-V '+Math.round(dv())+' m/s','MASS       '+PR.m.toFixed(1)+' t   |   WARP x'+WARP[S.wi],'GAME COMPLETE '+Math.floor(visited.size/VISITABLE.length*100)+'%   ('+visited.size+'/'+VISITABLE.length+' worlds explored)'].join('\n')}
 
+const SOLAR_STATE_KEY='mraft-solar-flight-state';
+let solarStateStamp=0;
+function saveSolarFlightState(now){
+ if(now-solarStateStamp<350)return;
+ solarStateStamp=now;
+ try{
+   let hx=S.x,hy=S.y,hvx=S.vx,hvy=S.vy,idx=S.cb;
+   while(idx>0){const q=bp(idx,UT);hx+=q[0];hy+=q[1];hvx+=q[2];hvy+=q[3];idx=B[idx].par}
+   localStorage.setItem(SOLAR_STATE_KEY,JSON.stringify({
+     at:Date.now(),ut:UT,body:B[S.cb].nm,bodyIndex:S.cb,
+     x:S.x,y:S.y,vx:S.vx,vy:S.vy,hx,hy,hvx,hvy,
+     altitude:Math.hypot(S.x,S.y)-B[S.cb].R,
+     speed:Math.hypot(S.vx,S.vy),launched:launchReleased,dead:!!S.dead
+   }));
+ }catch(_){}
+}
+
 function frame(now){const dt=Math.min(.05,(now-last)/1e3);last=now;const b=B[S.cb];PRESS=b.atm?Math.exp(-Math.max(Math.hypot(S.x,S.y)-b.R,0)/b.atm[1]):0;
  if(!paused){
   if(!launchReleased){launchElapsed+=dt;const previous=launchElapsed-dt;
@@ -307,6 +324,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1e3);last=now;const b=B[S.c
    }
   }else control(dt);
   if(launchReleased)sim(dt);particles(dt)
+ saveSolarFlightState(now)
  }
  props();if(mapOn&&mapFollow){mapX=S.x;mapY=S.y}cx.setTransform(dpr,0,0,dpr,0,0);if(mapOn){mapv();window.__solarAfterMap?.()}else flight(now/1e3);
  if(now-hT>120){hT=now;hud();window.__solarHud?.()}if(mapOn){mapv();window.__solarAfterMap?.()}else flight(now/1e3);window.__solarFrame?.(now/1e3);requestAnimationFrame(frame)}
