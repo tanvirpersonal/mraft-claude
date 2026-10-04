@@ -434,8 +434,8 @@ function renderStaging(){
     var row=document.createElement('div');row.className='stage-row'+(flight&&flight.stage===s?' current':'');
     var names=arr.length?arr.map(function(p){return partDef(p.type).name;}).join(', '):'EMPTY STAGE';
     row.innerHTML='<div class="stage-head"><div class="stage-num">'+(s+1)+'</div><div class="stage-title-text">STAGE '+(s+1)+'</div></div><div class="stage-items">'+names+'</div><div class="stage-controls"><button data-dir="-1">MOVE BACK</button><button data-dir="1">MOVE FORWARD</button></div>';
-    row.querySelector('[data-dir="-1"]').onclick=function(){changeStage(s,-1);};
-    row.querySelector('[data-dir="1"]').onclick=function(){changeStage(s,1);};
+    row.querySelector('[data-dir="-1"]').onclick=(function(index){return function(){changeStage(index,-1);};})(s);
+    row.querySelector('[data-dir="1"]').onclick=(function(index){return function(){changeStage(index,1);};})(s);
     box.appendChild(row);
   }
 }
@@ -532,13 +532,14 @@ function fitRocket(){
 
 function newRocket(){
   state.history=[];state.future=[];state.parts=[];
-  state.parts.push(defaultPart('capsule',0,7.1,2));
-  state.parts.push(defaultPart('nose',0,8.4,2));
-  state.parts.push(defaultPart('tankM',0,3.95,1));
-  state.parts.push(defaultPart('tankM',0,.55,1));
-  state.parts.push(defaultPart('decoupler',0,-1.0,1));
-  state.parts.push(defaultPart('tankM',0,-3.0,0));
-  state.parts.push(defaultPart('engineSea',0,-5.3,0));
+  state.parts.push(defaultPart('capsule',0,6.1,2));
+  state.parts.push(defaultPart('nose',0,7.4,2));
+  state.parts.push(defaultPart('decoupler',0,5.15,1));
+  state.parts.push(defaultPart('tankM',0,3.4,1));
+  state.parts.push(defaultPart('tankM',0,.15,1));
+  state.parts.push(defaultPart('decoupler',0,-1.8,0));
+  state.parts.push(defaultPart('tankM',0,-3.35,0));
+  state.parts.push(defaultPart('engineSea',0,-5.7,0));
   state.parts.push(defaultPart('fin',1.25,-3.6,0));state.parts[state.parts.length-1].symmetryGroup='starter-fin';
   var lf=defaultPart('fin',-1.25,-3.6,0);lf.symmetryGroup='starter-fin';state.parts.push(lf);
   state.selected=null;computeStageCount();fitRocket();updateAll();
