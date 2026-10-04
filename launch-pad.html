@@ -140,10 +140,33 @@ function setThr(v){S.thr=v;thrEl.value=v*100;$('#thr-value').textContent=Math.ro
 function launchThrust(){return act().reduce((sum,p)=>sum+p.F*(1-(1-FS(p))*PRESS)*(p.k=='srb'?1:S.thr),0)}
 function warp(d){S.wi=Math.max(0,Math.min(WARP.length-1,S.wi+d))}
 function togglePause(){paused=!paused;const b=$('#pause');b.textContent=paused?'Resume':'Pause';b.setAttribute('aria-pressed',paused);last=performance.now()}
-function fitMap(){const el=elem(),b=B[S.cb],r=Math.hypot(S.x,S.y);mapX=mapY=0;mapFollow=0;zm=.4*Math.min(innerWidth,innerHeight)/Math.max(r*1.1,b.R*3,el.e<1?el.ap*1.05:0);mapFitScale=zm;updateMapTools()}
-function mapZoom(f,x=innerWidth/2,y=innerHeight/2){const beforeX=mapX+(x-innerWidth/2)/zm,beforeY=mapY-(y-innerHeight/2)/zm;zm=Math.max(1e-12,Math.min(1,zm*f));mapX=beforeX-(x-innerWidth/2)/zm;mapY=beforeY+(y-innerHeight/2)/zm;updateMapTools()}
-function updateMapTools(){const tools=$('#map-tools');tools.classList.toggle('visible',!!mapOn);document.body.classList.toggle('map-active',!!mapOn);$('#map-scale').textContent=(zm/mapFitScale).toFixed(1)+'×';$('#map-center').setAttribute('aria-pressed',!!mapFollow)}
-function centerMap(){mapFollow=!mapFollow;if(mapFollow){mapX=S.x;mapY=S.y}updateMapTools()}
+let solarZoom=1,solarPanX=0,solarPanY=0,solarFollow=0;
+const SOLAR_DISPLAY_PLUTO={nm:'Pluto',a:2.2e10,R:1.2e5,col:'#c8b49a'};
+function solarRootIndices(){return B.map((q,i)=>q.par===0&&i>0?i:null).filter(i=>i!==null).filter(i=>B[i].nm!=='Sun')}
+function solarMaxOrbit(){return Math.max(2.2e10,...solarRootIndices().map(i=>B[i].a||0))}
+function solarAbs(i){
+ let x=0,y=0;
+ for(let k=i;k>0;k=B[k].par){const q=bp(k,UT);x+=q[0];y+=q[1]}
+ return[x,y];
+}
+function solarScreen(x,y){
+ const W=innerWidth,H=innerHeight,K=4e8,max=solarMaxOrbit(),R=.43*Math.min(W,H)*solarZoom;
+ const d=Math.hypot(x,y);
+ if(d<1)return[W/2+solarPanX,H/2+solarPanY];
+ const rr=R*Math.log1p(d/K)/Math.log1p(max/K),a=Math.atan2(y,x);
+ return[W/2+solarPanX+Math.cos(a)*rr,H/2+solarPanY-Math.sin(a)*rr];
+}
+function solarRadius(a){
+ const K=4e8,max=solarMaxOrbit(),R=.43*Math.min(innerWidth,innerHeight)*solarZoom;
+ return R*Math.log1p(a/K)/Math.log1p(max/K);
+}
+function solarRocketScreen(){
+ let [x,y]=solarAbs(S.cb);x+=S.x;y+=S.y;return solarScreen(x,y);
+}
+function fitMap(){solarZoom=1;solarPanX=0;solarPanY=0;solarFollow=0;mapFollow=0;mapFitScale=1;updateMapTools()}
+function mapZoom(f){if(mapOn){solarZoom=Math.max(.55,Math.min(3,solarZoom*f));updateMapTools();return}const x=innerWidth/2,y=innerHeight/2,beforeX=mapX+(x-innerWidth/2)/zm,beforeY=mapY-(y-innerHeight/2)/zm;zm=Math.max(1e-12,Math.min(1,zm*f));mapX=beforeX-(x-innerWidth/2)/zm;mapY=beforeY+(y-innerHeight/2)/zm;updateMapTools()}
+function updateMapTools(){const tools=$('#map-tools');tools.classList.toggle('visible',!!mapOn);document.body.classList.toggle('map-active',!!mapOn);$('#map-scale').textContent=(mapOn?solarZoom:(zm/mapFitScale)).toFixed(1)+'×';$('#map-center').setAttribute('aria-pressed',!!solarFollow)}
+function centerMap(){if(!mapOn){mapFollow=!mapFollow;if(mapFollow){mapX=S.x;mapY=S.y}}else solarFollow=!solarFollow;updateMapTools()}
 function toggleMap(){mapOn=!mapOn;$('#mp').setAttribute('aria-pressed',mapOn);if(mapOn)fitMap();else updateMapTools()}
 function soi(){const b=B[S.cb];let ch=0;
  if(b.par>=0&&Math.hypot(S.x,S.y)>b.soi){const q=bp(S.cb,UT);S.x+=q[0];S.y+=q[1];S.vx+=q[2];S.vy+=q[3];S.cb=b.par;ch=1}
@@ -275,20 +298,70 @@ function flight(t){
  const sp=Math.hypot(S.vx,S.vy);if(sp>2&&!S.land&&!S.dead){const a=Math.atan2(S.vy,S.vx)+A,mx=sx+Math.cos(a)*90,my=sy-Math.sin(a)*90;cx.strokeStyle='#52c7ea';cx.lineWidth=2;cx.beginPath();cx.arc(mx,my,8,0,TAU);cx.moveTo(mx-14,my);cx.lineTo(mx-8,my);cx.moveTo(mx+8,my);cx.lineTo(mx+14,my);cx.moveTo(mx,my-8);cx.lineTo(mx,my-14);cx.stroke()}}
 
 function mapv(){
- const W=innerWidth,H=innerHeight,b=B[S.cb],P=(x,y)=>[W/2+(x-mapX)*zm,H/2-(y-mapY)*zm],ring=(c,rad,col,fill)=>{cx.beginPath();cx.arc(c[0],c[1],Math.max(rad,2.5),0,TAU);if(fill){cx.fillStyle=col;cx.fill()}else{cx.strokeStyle=col;cx.stroke()}},
-  tx=(s,c)=>{cx.fillStyle='#9fb7c9';cx.font='12px system-ui,sans-serif';cx.fillText(s,c[0]+8,c[1]-8)},o=P(0,0);
- cx.fillStyle='#04070d';cx.fillRect(0,0,W,H);cx.lineWidth=1.2;
- B.forEach((q,i)=>{if(q.par==S.cb){ring(o,q.a*zm,'#243a52');const w=bp(i,UT),c=P(w[0],w[1]);ring(c,q.R*zm,q.col,1);drawMapRings(q,c[0],c[1],zm);tx(q.nm,c)}});
- if(b.par>=0){const w=bp(S.cb,UT),c=P(-w[0],-w[1]);ring(c,B[b.par].R*zm,B[b.par].col,1);drawMapRings(B[b.par],c[0],c[1],zm);tx(B[b.par].nm,c);ring(o,b.soi*zm,'#2f5578')}
- if(b.atm)ring(o,(b.R+b.atm[2])*zm,'rgba(110,175,255,.45)',1);
- ring(o,b.R*zm,b.col,1);drawMapRings(b,o[0],o[1],zm);tx(b.nm,o);
- const el=elem(),lim=(b.soi||1e11)*3,pts=[],nu=el.e<1?[0,TAU]:[-Math.acos(-1/el.e)*.98,Math.acos(-1/el.e)*.98];
- for(let i=0;i<=240;i++){const v=nu[0]+(nu[1]-nu[0])*i/240,rr=el.p/(1+el.e*Math.cos(v));if(rr>0&&rr<lim){const a=el.w+el.dir*v;pts.push(P(rr*Math.cos(a),rr*Math.sin(a)))}}
- cx.strokeStyle='#52c7ea';cx.lineWidth=1.8;cx.beginPath();pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke();
- const pe=P(el.pe*Math.cos(el.w),el.pe*Math.sin(el.w));ring(pe,3,'#8fe1ad',1);tx('Pe',pe);
- if(el.e<1){const ap=P(-el.ap*Math.cos(el.w),-el.ap*Math.sin(el.w));ring(ap,3,'#ffb15c',1);tx('Ap',ap)}
- const s=P(S.x,S.y);ring(s,4,'#fff',1);tx('Rocket',s);cx.fillText('Map: scroll to zoom, M to return',12,H-70)}
+ const W=innerWidth,H=innerHeight;
+ if(solarFollow){
+   const rp=solarRocketScreen();
+   solarPanX+=W/2-rp[0];solarPanY+=H/2-rp[1];
+ }
+ cx.fillStyle='#02050a';cx.fillRect(0,0,W,H);
+ // deep-space stars
+ cx.fillStyle='rgba(255,255,255,.62)';
+ for(let i=0;i<180;i++){const x=(i*83.17)%W,y=(i*47.31)%H,s=i%5===0?1.4:1;cx.fillRect(x,y,s,s)}
+ const roots=solarRootIndices();
+ // orbit rings
+ for(const i of roots){
+   const rr=Math.max(14,solarRadius(B[i].a));
+   cx.strokeStyle='rgba(96,132,160,.24)';cx.lineWidth=1;
+   cx.beginPath();cx.arc(W/2+solarPanX,H/2+solarPanY,rr,0,TAU);cx.stroke();
+ }
+ // Pluto orbit (display only; physics remains unchanged)
+ const prr=Math.max(14,solarRadius(SOLAR_DISPLAY_PLUTO.a));
+ cx.strokeStyle='rgba(96,132,160,.18)';cx.beginPath();cx.arc(W/2+solarPanX,H/2+solarPanY,prr,0,TAU);cx.stroke();
 
+ // Sun
+ const sun=[W/2+solarPanX,H/2+solarPanY];
+ const sg=cx.createRadialGradient(sun[0],sun[1],1,sun[0],sun[1],42);
+ sg.addColorStop(0,'rgba(255,247,190,1)');sg.addColorStop(.22,'rgba(255,202,90,.9)');sg.addColorStop(1,'rgba(255,130,30,0)');
+ cx.fillStyle=sg;cx.beginPath();cx.arc(sun[0],sun[1],42,0,TAU);cx.fill();
+ cx.fillStyle='#ffe18a';cx.beginPath();cx.arc(sun[0],sun[1],7,0,TAU);cx.fill();
+ cx.fillStyle='#fff0bd';cx.font='11px system-ui,sans-serif';cx.fillText('Sun',sun[0]+12,sun[1]-8);
+
+ const tx=(name,p,color='#a9bdca',sel=false)=>{
+   cx.fillStyle=sel?'#ffbf7a':color;cx.font=sel?'700 11px system-ui,sans-serif':'10px system-ui,sans-serif';
+   cx.fillText(name,p[0]+8,p[1]-7);
+   if(sel){cx.strokeStyle='#ffb15c';cx.lineWidth=1.6;cx.beginPath();cx.arc(p[0],p[1],Math.max(8,Math.min(12,solarRadius(1)*.08)),0,TAU);cx.stroke()}
+ };
+ // all planets
+ for(const i of roots){
+   const q=B[i],p=solarScreen(...solarAbs(i)),rr=Math.max(3.5,Math.min(9,2.7+Math.log1p(q.R/1e5)));
+   if(q.nm==='Saturn'){
+     cx.strokeStyle='rgba(229,207,163,.74)';cx.lineWidth=Math.max(1.5,rr*.32);cx.beginPath();cx.ellipse(p[0],p[1],rr*2.0,rr*.62,-.25,0,TAU);cx.stroke();
+   }
+   const g=cx.createRadialGradient(p[0]-rr*.35,p[1]-rr*.4,1,p[0],p[1],rr);
+   g.addColorStop(0,'#fff');g.addColorStop(.18,q.col);g.addColorStop(1,'#03070c');
+   cx.fillStyle=g;cx.beginPath();cx.arc(p[0],p[1],rr,0,TAU);cx.fill();
+   tx(q.nm,p);
+ }
+ // Pluto
+ const pPl=solarScreen(SOLAR_DISPLAY_PLUTO.a,0); // replaced below with orbit point
+ const pa=2.2e10,angPl=.72+UT*Math.sqrt(1e16/pa**3);
+ const pp=[W/2+solarPanX+Math.cos(angPl)*solarRadius(pa),H/2+solarPanY-Math.sin(angPl)*solarRadius(pa)];
+ cx.fillStyle=SOLAR_DISPLAY_PLUTO.col;cx.beginPath();cx.arc(pp[0],pp[1],4,0,TAU);cx.fill();tx('Pluto',pp);
+
+ // Current rocket position
+ const rp=solarRocketScreen();
+ cx.save();cx.translate(rp[0],rp[1]);cx.rotate(-S.psi);
+ cx.fillStyle='#edf6fb';cx.strokeStyle='#55d7f2';cx.lineWidth=1.2;
+ cx.beginPath();cx.moveTo(0,-8);cx.lineTo(4,5);cx.lineTo(0,3);cx.lineTo(-4,5);cx.closePath();cx.fill();cx.stroke();
+ cx.fillStyle='#ff8a42';cx.beginPath();cx.moveTo(-2.5,4);cx.lineTo(0,11);cx.lineTo(2.5,4);cx.closePath();cx.fill();cx.restore();
+ cx.fillStyle='#8fe1ad';cx.font='700 10px system-ui,sans-serif';cx.fillText('ROCKET · '+B[S.cb].nm,rp[0]+9,rp[1]+14);
+
+ // Current body's local orbit / connection indicator
+ const cp=solarScreen(...solarAbs(S.cb));
+ cx.strokeStyle='rgba(82,199,234,.38)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(cp[0],cp[1]);cx.lineTo(rp[0],rp[1]);cx.stroke();cx.setLineDash([]);
+ cx.fillStyle='#d5e5ef';cx.font='10px ui-monospace,monospace';cx.fillText('FULL SOLAR SYSTEM · '+roots.length+' PLANETS + PLUTO',12,H-54);
+ cx.fillStyle='#849eae';cx.fillText('M drag/pan · wheel zoom · Fit = whole system · Follow = rocket',12,H-36);
+}
 function hud(){const b=B[S.cb],r=Math.hypot(S.x,S.y),sp=Math.hypot(S.vx,S.vy),vr=(S.x*S.vx+S.y*S.vy)/r,el=elem(),km=m=>Math.abs(m)>=1e4?(m/1e3).toFixed(Math.abs(m)>=1e7?0:1)+' km':Math.round(m)+' m',
   F=act().reduce((s,p)=>s+p.F,0),fs=V.reduce((s,p)=>s+(p.s==0?p.f:0),0),stable=el.e<1&&el.pe>b.R+(b.atm?b.atm[2]:0);
  if(stable&&!S.orb)msg('Stable orbit around '+b.nm+'.',5000);S.orb=stable;
@@ -333,11 +406,11 @@ addEventListener('resize',resize);
 addEventListener('keydown',e=>{K[e.code]=1;const c=e.code;if(!e.repeat){if(c=='Space')stage();else if(c=='KeyM')toggleMap();else if(c=='KeyP')chute();else if(c=='KeyZ')setThr(1);else if(c=='KeyX')setThr(0);else if(c=='Period')warp(1);else if(c=='Comma')warp(-1);else if(c=='KeyO')togglePause();else if(c=='KeyR')reset();else if(mapOn&&(c=='Equal'||c=='NumpadAdd'))mapZoom(1.25);else if(mapOn&&(c=='Minus'||c=='NumpadSubtract'))mapZoom(.8);else if(mapOn&&c=='KeyC')centerMap()}
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(c)||(mapOn&&['Equal','Minus','NumpadAdd','NumpadSubtract'].includes(c)))e.preventDefault()});
 addEventListener('keyup',e=>K[e.code]=0);
-cv.addEventListener('pointerdown',e=>{if(!mapOn)return;mapFollow=0;updateMapTools();mapDrag={id:e.pointerId,x:e.clientX,y:e.clientY,cx:mapX,cy:mapY};cv.setPointerCapture(e.pointerId);cv.classList.add('dragging');e.preventDefault()});
-cv.addEventListener('pointermove',e=>{if(!mapDrag||e.pointerId!==mapDrag.id)return;mapX=mapDrag.cx-(e.clientX-mapDrag.x)/zm;mapY=mapDrag.cy+(e.clientY-mapDrag.y)/zm});
+cv.addEventListener('pointerdown',e=>{if(!mapOn)return;solarFollow=0;updateMapTools();mapDrag={id:e.pointerId,x:e.clientX,y:e.clientY,cx:solarPanX,cy:solarPanY};cv.setPointerCapture(e.pointerId);cv.classList.add('dragging');e.preventDefault()});
+cv.addEventListener('pointermove',e=>{if(!mapDrag||e.pointerId!==mapDrag.id)return;solarPanX=mapDrag.cx+(e.clientX-mapDrag.x);solarPanY=mapDrag.cy+(e.clientY-mapDrag.y)});
 const endMapDrag=e=>{if(mapDrag&&e.pointerId===mapDrag.id){mapDrag=null;cv.classList.remove('dragging')}};
 cv.addEventListener('pointerup',endMapDrag);cv.addEventListener('pointercancel',endMapDrag);
-cv.addEventListener('wheel',e=>{e.preventDefault();const f=Math.exp(-e.deltaY*.001);if(mapOn)mapZoom(f,e.clientX,e.clientY);else zf=Math.min(60,Math.max(.3,zf*f))},{passive:false});
+cv.addEventListener('wheel',e=>{e.preventDefault();const f=Math.exp(-e.deltaY*.001);if(mapOn)mapZoom(f);else zf=Math.min(60,Math.max(.3,zf*f))},{passive:false});
 $('#st').onclick=stage;$('#pc').onclick=chute;$('#wm').onclick=()=>warp(-1);$('#wp').onclick=()=>warp(1);$('#rs').onclick=reset;$('#pause').onclick=togglePause;
 $('#mp').onclick=toggleMap;$('#map-fit').onclick=fitMap;$('#map-minus').onclick=()=>mapZoom(.8);$('#map-plus').onclick=()=>mapZoom(1.25);$('#map-center').onclick=centerMap;thrEl.oninput=()=>setThr(thrEl.value/100);
 $('#fs').onclick=()=>{if(document.fullscreenElement){document.exitFullscreen?.();return}const p=document.documentElement.requestFullscreen?.();if(p)p.catch(()=>msg('Fullscreen is unavailable in this browser.'))};
