@@ -44,7 +44,22 @@ dt{color:var(--mu)}dd{margin:0;text-align:right;font-weight:600}
 dl{grid-template-columns:repeat(6,auto);gap:2px 8px}dd{text-align:left}
 }
 </style>
-</head>
+<style id="mraft-enhance-css">
+#adv-tools{position:absolute;right:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;z-index:5;max-width:min(620px,calc(100% - 24px));justify-content:flex-end}
+#adv-tools .b{padding:6px 9px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#adv-panel{position:absolute;right:12px;top:58px;width:235px;max-width:calc(100% - 24px);background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:10px;z-index:4;box-shadow:0 10px 30px rgba(0,0,0,.12);backdrop-filter:blur(8px)}
+#adv-panel[hidden]{display:none}.adv-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.adv-head strong{font-size:14px}.adv-muted{color:var(--mu);font-size:11px}.adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.adv-stat{border:1px solid var(--ln);border-radius:7px;padding:7px;background:rgba(128,160,190,.08)}.adv-stat small{display:block;color:var(--mu);font-size:10px}.adv-stat b{font-size:13px}
+.adv-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.adv-actions .b{padding:7px 8px}
+#adv-stagebar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:7px;overflow:auto;padding:2px;z-index:4;pointer-events:auto}
+.adv-stage{min-width:96px;border:1px solid var(--ln);background:var(--pn);color:var(--tx);border-radius:8px;padding:7px 8px;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.08);font:inherit;text-align:left}
+.adv-stage:hover{border-color:var(--ac)}.adv-stage.active{outline:2px solid var(--ac);outline-offset:-2px}.adv-stage .n{font-weight:600;font-size:12px}.adv-stage .m{color:var(--mu);font-size:10px;margin-top:2px}.adv-stage .v{font-weight:600;font-size:11px;margin-top:4px}
+#adv-palette-search{width:100%;position:sticky;top:0;z-index:2;margin:0 0 8px;padding:7px 8px;border:1px solid var(--ln);border-radius:7px;background:var(--bg);color:var(--tx);font:inherit}
+#adv-palette-search:focus{outline:2px solid var(--ac);outline-offset:1px}.adv-help{font-size:10px;color:var(--mu);line-height:1.35;padding:6px 2px 10px}
+#adv-toast{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:7px 10px;border-radius:999px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .16s;z-index:8}
+#adv-toast.show{opacity:1}@media(max-width:720px){#adv-tools{right:8px;top:8px;max-width:calc(100% - 16px)}#adv-panel{left:8px;right:8px;top:auto;bottom:122px;width:auto}#adv-stagebar{left:8px;right:8px;bottom:8px}}
+</style></head>
 <body>
 <div id="app">
 <aside id="pal" aria-label="Parts"></aside>
@@ -64,7 +79,27 @@ dl{grid-template-columns:repeat(6,auto);gap:2px 8px}dd{text-align:left}
 </div>
 <div class="card"><dl id="sm"></dl><div id="st"></div></div>
 </div>
-</main>
+<div id="adv-tools" aria-label="Builder tools">
+<button class="b" id="adv-undo" title="Undo (Ctrl/Cmd+Z)">↶ Undo</button>
+<button class="b" id="adv-redo" title="Redo (Ctrl/Cmd+Shift+Z)">↷ Redo</button>
+<button class="b" id="adv-rotl" title="Rotate counter-clockwise (Q)">⟲</button>
+<button class="b" id="adv-rotr" title="Rotate clockwise (E)">⟳</button>
+<button class="b" id="adv-dup" title="Duplicate selected (Ctrl/Cmd+D)">Duplicate</button>
+<button class="b" id="adv-fit" title="Frame rocket (F)">Fit</button>
+<button class="b" id="adv-theme">Theme</button>
+<button class="b" id="adv-stages">Auto Stage</button>
+</div>
+<div id="adv-panel" hidden>
+<div class="adv-head"><strong id="adv-name">No part selected</strong><span class="adv-muted" id="adv-id">—</span></div>
+<div class="adv-grid">
+<div class="adv-stat"><small>Mass</small><b id="adv-mass">—</b></div><div class="adv-stat"><small>Fuel</small><b id="adv-fuel">—</b></div>
+<div class="adv-stat"><small>Thrust</small><b id="adv-thrust">—</b></div><div class="adv-stat"><small>Isp</small><b id="adv-isp">—</b></div>
+<div class="adv-stat"><small>Rotation</small><b id="adv-rot">—</b></div><div class="adv-stat"><small>Stage</small><b id="adv-stage">—</b></div>
+</div>
+<div class="adv-muted" id="adv-nodeinfo">Attachment nodes: top / bottom / side</div>
+<div class="adv-actions"><button class="b" id="adv-stage-down">Stage −</button><button class="b" id="adv-stage-up">Stage +</button><button class="b" id="adv-center">Center</button><button class="b" id="adv-delete">Delete</button></div>
+</div>
+<div id="adv-stagebar" aria-label="Stages"></div><div id="adv-toast" aria-live="polite"></div></main>
 </div>
 <script>
 const $=s=>document.querySelector(s),cv=$('#c'),ctx=cv.getContext('2d');
@@ -332,5 +367,22 @@ new ResizeObserver(()=>{const r=cv.getBoundingClientRect();W=r.width;H=r.height;
 new MutationObserver(render).observe(document.documentElement,{attributes:true});
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',render);
 </script>
-</body>
+<script id="mraft-enhance-js">
+(()=>{const A={undo:[],redo:[],before:null,stage:0,shift:false,toast:null,drawing:false},Q=id=>document.getElementById(id),say=m=>{const e=Q('adv-toast');e.textContent=m;e.classList.add('show');clearTimeout(A.toast);A.toast=setTimeout(()=>e.classList.remove('show'),1100)},snapState=()=>JSON.stringify({mirror,parts:parts.map(p=>({id:p.u.id,x:p.x,y:p.y,tw:parts.indexOf(p.tw),deployed:!!p.deployed,rot:((p.rot||0)%360+360)%360,stage:Number.isFinite(p.stage)?p.stage:0}))}),restore=s=>{const z=JSON.parse(s);parts=[];sel=null;mirror=!!z.mirror;for(const r of z.parts||[]){const u=U.find(v=>v.id===r.id);if(!u)continue;const p=mk(u,Number(r.x)||0,Number(r.y)||0);p.deployed=!!r.deployed;p.rot=Number(r.rot)||0;p.stage=Number.isFinite(r.stage)?r.stage:0}for(let i=0;i<(z.parts||[]).length;i++){const t=z.parts[i].tw;if(Number.isInteger(t)&&t>=0&&t<parts.length)parts[i].tw=parts[t]}fitRocket();render()},push=b=>{const a=snapState();if(!b||b===a)return;A.undo.push(b);if(A.undo.length>80)A.undo.shift();A.redo.length=0},act=f=>{const b=snapState();f();render();push(b)},undo=()=>{if(!A.undo.length)return say('Nothing to undo');const c=snapState(),p=A.undo.pop();A.redo.push(c);restore(p);say('Undone')},redo=()=>{if(!A.redo.length)return say('Nothing to redo');const c=snapState(),n=A.redo.pop();A.undo.push(c);restore(n);say('Redone')},deg=p=>((p&&p.rot)||0)%360,rotate=d=>{if(!sel)return say('Select a part first');act(()=>{sel.rot=deg(sel)+d})},duplicate=()=>{if(!sel)return say('Select a part first');act(()=>{const p=mk(sel.u,sel.x+Math.max(1.25,sel.u.w*.8),sel.y);p.rot=deg(sel);p.deployed=!!sel.deployed;p.stage=Number.isFinite(sel.stage)?sel.stage:0;sel=p;snap(p)})},center=()=>{if(!sel)return say('Select a part first');act(()=>{sel.x=0;snap(sel)})},shiftStage=d=>{if(!sel)return say('Select a part first');act(()=>{sel.stage=Math.max(0,(Number(sel.stage)||0)+d)})},autoStage=()=>{if(!parts.length)return;act(()=>{const e=parts.filter(p=>p.u.t>0||p.u.k==='srb').sort((a,b)=>b.y-a.y);if(!e.length){parts.forEach(p=>p.stage=0);return}parts.forEach(p=>{let k=0,bd=1e9;e.forEach((x,i)=>{const d=Math.abs(p.y-x.y);if(d<bd){bd=d;k=i}});p.stage=k});A.stage=0});say('Stages rebuilt')},stages=()=>{const m=Math.max(0,...parts.map(p=>Number(p.stage)||0)),o=[];for(let s=0;s<=m;s++){const own=parts.filter(p=>(Number(p.stage)||0)===s),cur=parts.filter(p=>(Number(p.stage)||0)>=s),mass=cur.reduce((a,p)=>a+p.u.m+p.u.f,0),fuel=own.reduce((a,p)=>a+p.u.f,0),thrust=own.reduce((a,p)=>a+p.u.t,0),wi=own.reduce((a,p)=>a+p.u.t*p.u.i,0),isp=thrust?wi/thrust:0,dv=fuel&&isp&&mass>fuel?isp*9.80665*Math.log(mass/(mass-fuel)):0;o.push({s,own,mass,fuel,thrust,dv})}return o},panel=()=>{const p=sel,e=Q('adv-panel');e.hidden=!p;if(!p)return;const u=p.u;Q('adv-name').textContent=u.n;Q('adv-id').textContent=u.id;Q('adv-mass').textContent=(u.m+u.f).toFixed(2)+' t';Q('adv-fuel').textContent=u.f.toFixed(2)+' t';Q('adv-thrust').textContent=u.t?Math.round(u.t)+' kN':'—';Q('adv-isp').textContent=u.i?Math.round(u.i)+' s':'—';Q('adv-rot').textContent=deg(p)+'°';Q('adv-stage').textContent=String((Number(p.stage)||0)+1);Q('adv-nodeinfo').textContent='Attachment nodes • top / bottom / side • '+(p.tw?'symmetry paired':'single')},stageBar=()=>{const e=Q('adv-stagebar'),d=stages();e.innerHTML=d.map(x=>'<button class="adv-stage '+(A.stage===x.s?'active':'')+'" data-st="'+x.s+'"><div class="n">Stage '+(x.s+1)+'</div><div class="m">'+x.own.length+' parts · '+x.fuel.toFixed(1)+' t fuel</div><div class="v">'+(x.thrust?Math.round(x.thrust)+' kN · ':'')+Math.round(x.dv)+' m/s</div></button>').join('');e.querySelectorAll('.adv-stage').forEach(b=>b.onclick=()=>{A.stage=Number(b.dataset.st);const c=parts.filter(p=>(Number(p.stage)||0)===A.stage);if(c.length)sel=c[0];render()})};
+
+const search=document.createElement('input');search.id='adv-palette-search';search.placeholder='Search parts…';search.setAttribute('aria-label','Search parts');const help=document.createElement('div');help.className='adv-help';help.textContent='Drag to place • Q/E rotate • Shift = fine snap • Del removes • Ctrl/Cmd+Z undo';pal.prepend(help);pal.prepend(search);search.oninput=()=>{const q=search.value.toLowerCase();pal.querySelectorAll('.tile').forEach(t=>t.style.display=t.textContent.toLowerCase().includes(q)?'flex':'none');pal.querySelectorAll('.grp').forEach(g=>{const a=[...g.querySelectorAll('.tile')].some(t=>t.style.display!=='none');g.style.display=a?'grid':'none';const h=g.previousElementSibling;if(h&&h.tagName==='H3')h.style.display=a?'':'none'})};
+
+const baseDraw=draw;draw=function(c,u,x,y,s,fl,deployed){let r=0;if(c===ctx&&A.drawing){const p=parts.find(v=>v.u===u&&Math.hypot(((v.x-cam.x)*s+W/2)-x,((v.y-cam.y)*s+H/2)-y)<.6);if(p)r=deg(p)*Math.PI/180}c.save();c.translate(x,y);if(r)c.rotate(r);c.translate(-x,-y);baseDraw(c,u,x,y,s,fl,deployed);c.restore()};
+
+const baseRender=render;render=function(){A.drawing=true;baseRender();A.drawing=false;panel();stageBar();Q('adv-undo').disabled=!A.undo.length;Q('adv-redo').disabled=!A.redo.length;['adv-rotl','adv-rotr','adv-dup'].forEach(id=>Q(id).disabled=!sel)};
+
+Q('adv-undo').onclick=undo;Q('adv-redo').onclick=redo;Q('adv-rotl').onclick=()=>rotate(-90);Q('adv-rotr').onclick=()=>rotate(90);Q('adv-dup').onclick=duplicate;Q('adv-fit').onclick=()=>{fitRocket();render();say('Rocket framed')};Q('adv-theme').onclick=()=>{const r=document.documentElement,d=r.getAttribute('data-theme')!=='dark';r.setAttribute('data-theme',d?'dark':'light');render()};Q('adv-stages').onclick=autoStage;Q('adv-stage-down').onclick=()=>shiftStage(-1);Q('adv-stage-up').onclick=()=>shiftStage(1);Q('adv-center').onclick=center;Q('adv-delete').onclick=()=>{if(sel)act(()=>del(sel))};
+
+addEventListener('pointerdown',e=>{if(e.target.closest?.('#adv-tools,#adv-panel,#adv-stagebar'))return;A.before=snapState()},true);addEventListener('pointerup',()=>setTimeout(()=>{if(A.before){push(A.before);A.before=null}},0),true);
+addEventListener('keydown',e=>{const k=e.key.toLowerCase(),m=e.ctrlKey||e.metaKey;A.shift=e.shiftKey;if(m&&k==='z'&&!e.shiftKey){e.preventDefault();undo();return}if((m&&k==='z'&&e.shiftKey)||(m&&k==='y')){e.preventDefault();redo();return}if(m&&k==='d'){e.preventDefault();duplicate();return}if(k==='q'){e.preventDefault();rotate(-90);return}if(k==='e'){e.preventDefault();rotate(90);return}if(k==='f'){e.preventDefault();fitRocket();render();return}if(k==='escape'){sel=null;render();return}if(e.key==='Delete'||e.key==='Backspace'){if(sel){const b=snapState();setTimeout(()=>push(b),0)}}});
+addEventListener('keyup',e=>A.shift=e.shiftKey);
+const baseSnap=snap;snap=function(p){baseSnap(p);if(A.shift){p.x=Math.round(p.x*8)/8;p.y=Math.round(p.y*8)/8}};
+const oldSave=Q('sv').onclick,oldLoad=Q('ld').onclick;Q('sv').onclick=()=>{oldSave?.call(Q('sv'));say('Blueprint saved')};Q('ld').onclick=()=>{const b=snapState();oldLoad?.call(Q('ld'));setTimeout(()=>push(b),0)};
+A.stage=0;render()})();
+</script></body>
 </html>
