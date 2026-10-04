@@ -42,7 +42,7 @@ body.map-active canvas{cursor:grab}body.map-active canvas.dragging{cursor:grabbi
 <div id="ui" aria-label="Flight controls">
 <div class="group"><button id="bl" aria-label="Rotate left" title="Rotate left (A)">&#9664;</button><button id="br" aria-label="Rotate right" title="Rotate right (D)">&#9654;</button>
 <label id="thr-wrap" for="thr"><span>THROTTLE</span><input id="thr" type="range" min="0" max="100" value="0" aria-label="Throttle"><output id="thr-value">0%</output></label></div>
-<div class="group"><button id="st" title="Separate stages (Space)">Stage</button><button id="pc" title="Deploy or cut parachute (P)">Chute</button><button id="mp" aria-pressed="false" title="Toggle orbital map (M)">Map</button><a href="solar-system.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:linear-gradient(180deg,#18364a,#112a3a);color:var(--text);font:650 13px system-ui,sans-serif;text-decoration:none">Solar System</a></div>
+<div class="group"><button id="st" title="Separate stages (Space)">Stage</button><button id="pc" title="Deploy or cut parachute (P)">Chute</button><button id="mp" aria-pressed="false" title="Toggle orbital map (M)">Map</button></div>
 <div class="group"><button id="wm" aria-label="Decrease time warp" title="Decrease time warp (,)">Warp &minus;</button><button id="wp" aria-label="Increase time warp" title="Increase time warp (.)">Warp +</button></div>
 <div class="group"><button id="pause" aria-pressed="false" title="Pause simulation">Pause</button><button id="fs" title="Toggle fullscreen">Fullscreen</button><button id="rs" title="Restart flight (R)">Restart</button></div>
 </div>
@@ -347,5 +347,5 @@ resize();reset();requestAnimationFrame(frame);
 </script>
 
 
-</body>
+<script src="./solar-system.js?v=1"></script>\n</body>
 </html>
