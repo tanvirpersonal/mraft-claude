@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Launch Control · Rocket Flight</title>
+<style>
+:root{color-scheme:dark;--panel:rgba(10,22,35,.82);--panel-strong:rgba(11,25,39,.95);--line:rgba(155,190,215,.2);--text:#e7f2fb;--muted:#8da7ba;--accent:#55d7f2;--green:#77e0ad;--shadow:0 16px 48px rgba(0,0,0,.32)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{overflow:hidden;background:#000;color:var(--text);font:13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+#hud,#msg,#ui,#brand{position:fixed;z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);box-shadow:var(--shadow)}
+#brand{top:14px;left:14px;display:flex;align-items:center;gap:10px;padding:10px 14px;pointer-events:none}
+.brand-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;color:#061823;background:linear-gradient(145deg,#9af1ff,var(--accent));font-size:17px;font-weight:900;box-shadow:0 0 22px #55d7f255}
+.brand-title{font-weight:750;letter-spacing:.12em;font-size:11px}.brand-sub{color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+#hud{top:72px;left:14px;margin:0;padding:13px 15px;font:11px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace;border-left:2px solid var(--accent);pointer-events:none;min-width:270px;max-width:min(360px,calc(100% - 28px));white-space:pre-wrap;color:#d8e9f5}
+#msg{top:16px;right:14px;padding:9px 13px;font-weight:600;max-width:min(340px,calc(100% - 28px));color:var(--text)}
+#msg:empty{display:none}
+#ui{left:50%;bottom:14px;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:center;padding:9px 10px;width:max-content;max-width:calc(100% - 20px);background:var(--panel-strong)}
+.group{display:flex;align-items:center;gap:6px;padding:0 4px}.group+.group{border-left:1px solid var(--line);padding-left:10px}
+button{min-height:36px;font:inherit;font-weight:650;color:var(--text);background:linear-gradient(180deg,#1a374d,#122b3d);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;touch-action:manipulation;transition:transform .15s,border-color .15s,background .15s}
+button:hover{border-color:var(--accent);background:#20445b;transform:translateY(-1px)}button:active{transform:translateY(0)}button[aria-pressed=true]{color:#061823;background:var(--accent);border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#thr-wrap{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;min-width:190px;font-size:11px;color:var(--muted)}#thr-wrap output{min-width:34px;color:var(--accent);font:700 11px ui-monospace,monospace;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+#hint{position:fixed;z-index:1;right:16px;bottom:88px;color:#d5e7f4a8;font-size:11px;text-align:right;text-shadow:0 1px 4px #000;pointer-events:none}
+#map-tools{position:fixed;z-index:3;top:14px;right:14px;display:none;align-items:center;gap:6px;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+#map-tools.visible{display:flex}#map-tools button{min-width:38px;padding:6px 10px}#map-scale{min-width:54px;text-align:center;color:var(--muted);font:10px ui-monospace,monospace}
+body.map-active canvas{cursor:grab}body.map-active canvas.dragging{cursor:grabbing}
+@media(max-width:700px){#map-tools{top:auto;right:10px;bottom:75px;padding:5px;gap:4px}#map-tools button{min-height:32px;min-width:34px;padding:5px 8px}#map-scale{min-width:45px}}
+@media(max-width:700px){#brand{top:10px;left:10px;padding:8px 10px}.brand-mark{width:28px;height:28px}#hud{top:58px;left:10px;min-width:0;font-size:10px;line-height:1.7;padding:9px 11px}#msg{top:10px;right:10px;font-size:11px}#ui{bottom:8px;max-width:calc(100% - 12px);gap:5px;padding:7px}.group{gap:4px;padding:0 2px}.group+.group{padding-left:6px}button{min-height:34px;padding:6px 9px;font-size:12px}#thr-wrap{min-width:145px;gap:5px}#hint{display:none}}
+@media(max-width:430px){#brand{top:8px;left:8px}.brand-sub{display:none}#hud{top:50px;left:8px}#msg{top:8px;right:8px;max-width:48%}#ui{width:calc(100% - 12px)}.group{flex:1;justify-content:center}.group:first-child{flex-basis:100%;border-bottom:1px solid var(--line);padding-bottom:6px}.group+.group{border-left:0}#thr-wrap{width:100%}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Rocket flight simulation"></canvas>
+<div id="brand"><span class="brand-mark">✦</span><span><span class="brand-title">LAUNCH CONTROL</span><br><span class="brand-sub">Flight simulation · <span id="flight-state">READY</span></span></span></div>
+<pre id="hud" aria-live="polite"></pre>
+<div id="msg" role="status"></div>
+<div id="hint">A / D rotate · W / S throttle · Space stage · O pause · M map · drag to pan · scroll to zoom</div>
+<div id="map-tools" aria-label="Map controls"><button id="map-fit" title="Fit orbit and body">Fit</button><button id="map-minus" aria-label="Zoom out">−</button><output id="map-scale">1×</output><button id="map-plus" aria-label="Zoom in">+</button><button id="map-center" aria-pressed="false" title="Follow rocket on the map">Follow</button></div>
+<div id="ui" aria-label="Flight controls">
+<div class="group"><button id="bl" aria-label="Rotate left" title="Rotate left (A)">&#9664;</button><button id="br" aria-label="Rotate right" title="Rotate right (D)">&#9654;</button>
+<label id="thr-wrap" for="thr"><span>THROTTLE</span><input id="thr" type="range" min="0" max="100" value="0" aria-label="Throttle"><output id="thr-value">0%</output></label></div>
+<div class="group"><button id="st" title="Separate stages (Space)">Stage</button><button id="pc" title="Deploy or cut parachute (P)">Chute</button><button id="mp" aria-pressed="false" title="Toggle orbital map (M)">Map</button></div>
+<div class="group"><button id="wm" aria-label="Decrease time warp" title="Decrease time warp (,)">Warp &minus;</button><button id="wp" aria-label="Increase time warp" title="Increase time warp (.)">Warp +</button></div>
+<div class="group"><button id="pause" aria-pressed="false" title="Pause simulation">Pause</button><button id="fs" title="Toggle fullscreen">Fullscreen</button><button id="rs" title="Restart flight (R)">Restart</button></div>
+</div>
+<script>
+const g0=9.81,TAU=Math.PI*2,KEY='rocket-builder-blueprint',$=q=>document.querySelector(q),cv=$('#c'),cx=cv.getContext('2d'),hudEl=$('#hud'),msgEl=$('#msg'),thrEl=$('#thr');
+// Part catalog (same ids as the builder): [w,h,dry t,fuel t,thrust kN,isp s,kind]
+const U={pod:[2,1.8,1.2,0,0,0,'pod'],nose:[2,2,.2,0,0,0,'nose'],t1:[2,2,.2,1.8,0,0,'tank'],t2:[2,4,.4,3.6,0,0,'tank'],t3:[3,4,.8,8.1,0,0,'tank'],t4:[3,6,1.2,12.2,0,0,'tank'],e1:[2,2,.9,0,220,290,'eng'],e2:[2,1.8,.7,0,90,380,'vac'],e3:[2,2.6,2.2,0,540,295,'eng'],e4:[2.4,2.4,1.6,0,300,360,'vac'],b1:[1.2,5,.5,6,300,240,'srb'],b2:[1.6,7,.8,10,520,245,'srb'],dc:[2,.4,.1,0,0,0,'dec'],fin:[1.4,2,.1,0,0,0,'fin'],leg:[1.6,2.6,.15,0,0,0,'leg'],para:[1.6,1.4,.15,0,0,0,'para'],dock:[1.2,.8,.1,0,0,0,'dock'],solar:[2,1.8,.15,0,0,0,'solar']};
+const COL={pod:['#eef2f6','#aeb8c3'],nose:['#e9edf1','#a9b4bf'],tank:['#e6e9ed','#9aa6b2'],eng:['#8d98a4','#4c5662'],vac:['#c9a36a','#7a5a2e'],srb:['#f0f2f4','#aab3bd'],dec:['#6f7a86','#3d4650'],fin:['#c9d1d9','#7f8c99'],leg:['#9aa6b2','#59646f'],para:['#e8e9e4','#aab2ba'],dock:['#aab3bd','#59646f'],solar:['#2a6db3','#123a66']};
+const SAMPLE=[['pod',0,0],['t2',0,2.9],['e2',0,5.8],['dc',0,6.9],['t3',0,9.1],['e1',0,12.1],['b1',-2.1,8.6],['b1',2.1,8.6],['leg',-1.8,11.8],['leg',1.8,11.8]];
+// Bodies: R m, mu m3/s2, a orbit radius m, atm [sea-level kg/m3, scale height m, top m]
+const B=[{nm:'Sun',par:-1,R:2e7,mu:1e16,col:'#ffd27a'},
+{nm:'Venus',par:0,R:5.7e5,mu:2.8e12,a:1.8e9,col:'#d9a85f',atm:[65,1.6e4,1.2e5],sky:[223,166,104]},
+{nm:'Earth',par:0,R:6e5,mu:3.528e12,a:2.5e9,col:'#3f7d4e',atm:[1.2,7e3,5e4],sky:[111,180,255]},
+{nm:'Moon',par:2,R:1.5e5,mu:3.6e10,a:3e7,col:'#9b9b97'},
+{nm:'Mars',par:0,R:3e5,mu:3.33e11,a:4e9,col:'#b8603b',atm:[.02,1.1e4,6e4],sky:[201,141,98]},
+{nm:'Jupiter',par:0,R:1.2e6,mu:1e14,a:8e9,col:'#c58c68',atm:[.9,2.7e4,1.8e5],sky:[205,155,122]},
+{nm:'Europa',par:5,R:1.2e5,mu:3.2e10,a:2e7,col:'#c9c5a9'},
+{nm:'Saturn',par:0,R:1.05e6,mu:5e13,a:1.2e10,col:'#d6bb78',atm:[.7,3.5e4,2e5],sky:[211,188,128]},
+{nm:'Titan',par:7,R:1.4e5,mu:9e10,a:2.5e7,col:'#c68b4c',atm:[1.4,2.2e4,1.2e5],sky:[194,137,75]},
+{nm:'Mercury',par:0,R:2.4e5,mu:2.2e11,a:1.2e9,col:'#9b8e82'},
+{nm:'Uranus',par:0,R:8.5e5,mu:5.8e12,a:1.45e10,col:'#79c6cf',atm:[.4,3e4,1.8e5],sky:[105,194,211]},
+{nm:'Neptune',par:0,R:8.2e5,mu:6.8e12,a:1.7e10,col:'#477ad4',atm:[.5,2.8e4,1.7e5],sky:[75,116,210]}];
+const RINGED=new Set(['Saturn','Uranus']);
+function drawMapRings(body,x,y,scale){if(!RINGED.has(body.nm))return;const r=body.R*scale;cx.save();cx.translate(x,y);cx.rotate(-.28);cx.strokeStyle='rgba(224,201,151,.78)';cx.lineWidth=Math.max(2,r*.18);cx.beginPath();cx.ellipse(0,0,Math.max(r*2.1,4),Math.max(r*.72,2),0,0,TAU);cx.stroke();cx.strokeStyle='rgba(111,91,61,.8)';cx.lineWidth=Math.max(1,r*.07);cx.beginPath();cx.ellipse(0,0,Math.max(r*1.55,3),Math.max(r*.53,1),0,0,TAU);cx.stroke();cx.restore()}
+for(let i=1;i<B.length;i++){const b=B[i],p=B[b.par];b.om=Math.sqrt(p.mu/b.a**3);b.th0=i*1.7;b.soi=b.a*Math.pow(b.mu/p.mu,.4)}
+const bp=(i,t)=>{const b=B[i],th=b.th0+b.om*t,c=Math.cos(th),s=Math.sin(th);return[b.a*c,b.a*s,-b.a*b.om*s,b.a*b.om*c]};
+const WARP=[1,2,5,10,50,100,1e3,1e4,1e5],ST=Array.from({length:150},()=>[Math.random(),Math.random(),Math.random()*1.4+.4]);
+let S,V,PR,UT=0,Q=[],K={},hold={L:0,R:0},mapOn=0,paused=0,zf=7,zm=1e-3,mapX=0,mapY=0,mapDrag=null,mapFollow=0,mapFitScale=1e-3,PRESS=1,dpr=1,last=performance.now(),hT=0,mt,ART=null,ART_BOX=null,ART_UP=-1,ART_COUNT=0;
+const VISITED_KEY='rocket-flight-visited-bodies',VISITABLE=B.map((b,i)=>i).filter(i=>i!==0);let visited=new Set([2]);
+try{const saved=JSON.parse(localStorage.getItem(VISITED_KEY));if(Array.isArray(saved))saved.forEach(i=>{if(VISITABLE.includes(i))visited.add(i)})}catch(e){}
+const markVisited=i=>{if(VISITABLE.includes(i)&&!visited.has(i)){visited.add(i);try{localStorage.setItem(VISITED_KEY,JSON.stringify([...visited]))}catch(e){}}};
+const FS=p=>p.k=='vac'?.4:p.k=='srb'?.93:.91,IV=p=>p.k=='vac'?p.I:p.I/FS(p),wr=a=>Math.atan2(Math.sin(a),Math.cos(a));
+function msg(t,ms){msgEl.textContent=t;clearTimeout(mt);mt=setTimeout(()=>msgEl.textContent='',ms||3500)}
+
+// Blueprint -> vehicle. Keep the builder's rendered artwork for the intact launch vehicle.
+function loadV(){let a=null,note='';try{a=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ if(!Array.isArray(a)||!a.length||!a.every(r=>Array.isArray(r)&&U[r[0]]&&isFinite(r[1])&&isFinite(r[2]))){a=SAMPLE;note='No saved rocket found here, so this is the sample rocket.'}
+ const P=a.map(r=>{const d=U[r[0]];return{id:r[0],x:+r[1],y:+r[2],w:d[0],h:d[1],m:d[2],f:d[3],F:d[4],I:d[5],k:d[6],deployed:!!r[4]}});
+ const av=k=>{const l=P.filter(p=>k.includes(p.k));return l.length?l.reduce((s,p)=>s+p.y,0)/l.length:null},e=av(['eng','vac']),t=av(['pod','nose']),up=e!=null&&t!=null&&e<t?1:-1;
+ P.forEach(p=>p.u=up*p.y);V=P;ART=null;ART_BOX=null;ART_UP=up;ART_COUNT=P.length;
+ if(!note){try{const box=JSON.parse(localStorage.getItem('rocket-builder-art-meta')),src=localStorage.getItem('rocket-builder-art');if(box&&src&&[box.minX,box.minY,box.maxX,box.maxY,box.scale].every(Number.isFinite)){const im=new Image();ART_BOX=box;im.onload=()=>{ART=im};im.src=src}}catch(e){}}
+ return note}
+function props(){const Dc=V.filter(p=>p.k=='dec').map(p=>p.u);V.forEach(p=>{p.s=Dc.filter(d=>d<p.u-1e-6).length});
+ let m=0,cu=0,mn=1e9,mx=-1e9,W=0;
+ for(const p of V){const w=p.m+p.f;m+=w;cu+=w*p.u;mn=Math.min(mn,p.u-p.h/2);mx=Math.max(mx,p.u+p.h/2);W=Math.max(W,2*(Math.abs(p.x)+p.w/2))}
+ const c=m?cu/m:0;PR={m,c,db:c-mn,top:mx-c,hw:W/2,W,L:mx-mn,legs:V.some(p=>p.k=='leg'),para:V.some(p=>p.k=='para')}}
+// Only the bottom stage (below the lowest decoupler) burns; tanks in that stage feed its engines, boosters use their own fuel.
+const act=()=>V.filter(p=>p.s==0&&p.F&&(p.k=='srb'?p.f>0:V.some(q=>q.s==0&&q.k=='tank'&&q.f>0)));
+function take(a){let t=0;for(const q of V)if(q.s==0&&q.k=='tank'&&q.f>0&&t<a){const d=Math.min(q.f,a-t);q.f-=d;t+=d}return t}
+function burn(E,h,P){let F=0;for(const p of E){let u=p.F/(p.I*g0)*(p.k=='srb'?1:S.thr)*h;if(p.k=='srb'){u=Math.min(p.f,u);p.f-=u}else u=take(u);F+=u/h*IV(p)*(1-(1-FS(p))*P)*g0}return F}
+function dv(){let t=0;const n=Math.max(0,...V.map(p=>p.s));for(let j=0;j<=n;j++){let F=0,Fi=0,f=0,m0=0;const tk=V.some(q=>q.s==j&&q.k=='tank'&&q.f>0);
+ for(const p of V){if(p.s>=j)m0+=p.m+p.f;if(p.s==j){f+=p.f;if(p.F&&(p.k=='srb'?p.f>0:tk)){F+=p.F;Fi+=p.F/IV(p)}}}
+ if(F&&f>0&&m0>f)t+=F/Fi*g0*Math.log(m0/(m0-f))}return t}
+function elem(){const b=B[S.cb],r=Math.hypot(S.x,S.y),v2=S.vx*S.vx+S.vy*S.vy,h=S.x*S.vy-S.y*S.vx,rv=S.x*S.vx+S.y*S.vy,k=v2-b.mu/r,ex=(k*S.x-rv*S.vx)/b.mu,ey=(k*S.y-rv*S.vy)/b.mu,e=Math.hypot(ex,ey),p=h*h/b.mu;
+ return{e,p,w:Math.atan2(ey,ex),dir:h<0?-1:1,pe:p/(1+e),ap:e<1?p/(1-e):Infinity}}
+
+function reset(){const note=loadV();S={cb:2,x:0,y:B[2].R,vx:0,vy:0,psi:Math.PI/2,w:0,wi:0,thr:0,land:1,lw:1,dead:0,chute:0,orb:0};markVisited(S.cb);UT=0;Q=[];paused=0;mapOn=0;mapDrag=null;mapFollow=0;cv.classList.remove('dragging');thrEl.value=0;$('#thr-value').textContent='0%';$('#pause').textContent='Pause';$('#pause').setAttribute('aria-pressed','false');$('#mp').setAttribute('aria-pressed','false');updateMapTools();props();
+ msg(note||'Z full throttle, X cut, Space stage, A/D turn, M map.',6000)}
+function crash(){S.dead=1;S.thr=0;for(let i=0;i<150;i++){const a=Math.random()*TAU,s=Math.random()*45;Q.push({x:S.x,y:S.y,vx:S.vx*.2+Math.cos(a)*s,vy:S.vy*.2+Math.sin(a)*s,l:0,m:1+Math.random()*2.5,r:1+Math.random()*3,g:2,a:.8,dr:.6,c:i%3?'255,150,50':'220,220,220'})}msg('Rocket destroyed. Press R to rebuild.',1e5)}
+function stage(){if(S.dead)return;const D=V.filter(p=>p.k=='dec');if(!D.length)return msg('No decoupler to separate.');
+ const lo=Math.min(...D.map(p=>p.u)),ux=Math.cos(S.psi),uy=Math.sin(S.psi);V=V.filter(p=>p.u>lo+1e-6);
+ for(let i=0;i<40;i++)Q.push({x:S.x-ux*PR.db,y:S.y-uy*PR.db,vx:S.vx+(Math.random()-.5)*14-ux*8,vy:S.vy+(Math.random()-.5)*14-uy*8,l:0,m:1.5,r:.6,g:2,a:.5,dr:.2,c:'230,230,230'});
+ S.vx+=ux*.6;S.vy+=uy*.6;props();msg('Stage separated.',2500)}
+function chute(){if(!PR.para)return msg('No parachute fitted.');S.chute=!S.chute;msg(S.chute?'Parachute deployed.':'Parachute cut.')}
+function setThr(v){S.thr=v;thrEl.value=v*100;$('#thr-value').textContent=Math.round(v*100)+'%'}
+function warp(d){S.wi=Math.max(0,Math.min(WARP.length-1,S.wi+d))}
+function togglePause(){paused=!paused;const b=$('#pause');b.textContent=paused?'Resume':'Pause';b.setAttribute('aria-pressed',paused);last=performance.now()}
+function fitMap(){const el=elem(),b=B[S.cb],r=Math.hypot(S.x,S.y);mapX=mapY=0;mapFollow=0;zm=.4*Math.min(innerWidth,innerHeight)/Math.max(r*1.1,b.R*3,el.e<1?el.ap*1.05:0);mapFitScale=zm;updateMapTools()}
+function mapZoom(f,x=innerWidth/2,y=innerHeight/2){const beforeX=mapX+(x-innerWidth/2)/zm,beforeY=mapY-(y-innerHeight/2)/zm;zm=Math.max(1e-12,Math.min(1,zm*f));mapX=beforeX-(x-innerWidth/2)/zm;mapY=beforeY+(y-innerHeight/2)/zm;updateMapTools()}
+function updateMapTools(){const tools=$('#map-tools');tools.classList.toggle('visible',!!mapOn);document.body.classList.toggle('map-active',!!mapOn);$('#map-scale').textContent=(zm/mapFitScale).toFixed(1)+'×';$('#map-center').setAttribute('aria-pressed',!!mapFollow)}
+function centerMap(){mapFollow=!mapFollow;if(mapFollow){mapX=S.x;mapY=S.y}updateMapTools()}
+function toggleMap(){mapOn=!mapOn;$('#mp').setAttribute('aria-pressed',mapOn);if(mapOn)fitMap();else updateMapTools()}
+function soi(){const b=B[S.cb];let ch=0;
+ if(b.par>=0&&Math.hypot(S.x,S.y)>b.soi){const q=bp(S.cb,UT);S.x+=q[0];S.y+=q[1];S.vx+=q[2];S.vy+=q[3];S.cb=b.par;ch=1}
+ else for(let i=1;i<B.length;i++)if(B[i].par==S.cb){const q=bp(i,UT);if(Math.hypot(S.x-q[0],S.y-q[1])<B[i].soi){S.x-=q[0];S.y-=q[1];S.vx-=q[2];S.vy-=q[3];S.cb=i;ch=1;break}}
+ if(ch){S.wi=0;Q=[];markVisited(S.cb);msg('Entered '+B[S.cb].nm+' sphere of influence.',5000);if(mapOn)fitMap()}}
+
+function step(h){
+ const b=B[S.cb];let ux=Math.cos(S.psi),uy=Math.sin(S.psi),r=Math.hypot(S.x,S.y);
+ const P=b.atm?Math.exp(-Math.max(r-b.R,0)/b.atm[1]):0,g=b.mu/(r*r*r);let ax=-g*S.x,ay=-g*S.y;
+ if(S.thr>0){const E=act();if(E.length){const a=burn(E,h,P)/PR.m;ax+=a*ux;ay+=a*uy}}
+ S.vx+=ax*h;S.vy+=ay*h;
+ if(P>1e-7){const sp=Math.hypot(S.vx,S.vy);if(sp>.5){const c=(ux*S.vx+uy*S.vy)/sp,s2=1-c*c,cd=.236*PR.W*PR.W*(1-s2)+.55*PR.L*PR.W*s2+(S.chute?500:0),k=.5*b.atm[0]*P*sp*cd/(PR.m*1e3),f=Math.exp(-k*h);S.vx*=f;S.vy*=f;if(S.chute&&sp>350){S.chute=0;msg('Parachute torn off.')}}}
+ S.x+=S.vx*h;S.y+=S.vy*h;S.psi+=S.w*h;
+ r=Math.hypot(S.x,S.y);ux=Math.cos(S.psi);uy=Math.sin(S.psi);const nx=S.x/r,ny=S.y/r,tl=Math.atan2(ux*ny-uy*nx,ux*nx+uy*ny),low=PR.db*Math.cos(tl)+PR.hw*Math.abs(Math.sin(tl));
+ if(r-b.R<low){const vr=S.vx*nx+S.vy*ny;
+  if(vr<0){if(Math.hypot(S.vx,S.vy)>(PR.legs?12:6)||Math.abs(tl)>.7)return crash();S.vx-=vr*nx;S.vy-=vr*ny;const f=Math.exp(-6*h);S.vx*=f;S.vy*=f}
+  S.x=nx*(b.R+low);S.y=ny*(b.R+low);S.land=1;if(S.thr==0&&!S.w)S.psi+=wr(Math.atan2(ny,nx)-S.psi)*Math.min(1,3*h)}else S.land=0}
+function sim(dt){if(S.dead)return;let b=B[S.cb],al=Math.hypot(S.x,S.y)-b.R;const top=b.atm?b.atm[2]:0,th=S.thr>0&&act().length>0;
+ let wp=WARP[S.wi];if(wp>1&&(th||al<top||(al<2e3&&!S.land))){S.wi=0;wp=1;msg('Time warp stopped.')}
+ if(wp>1)S.w=0;let tot=dt*wp,n=0;
+ while(tot>1e-9&&n++<3000){b=B[S.cb];const r=Math.hypot(S.x,S.y),v=Math.hypot(S.vx,S.vy),hm=th||r-b.R<top+3e3?.04:2,h=Math.min(tot,hm,.01*r/Math.max(v,10));step(h);UT+=h;tot-=h;soi();if(S.dead)return}
+ if(S.land&&!S.lw)msg('Touchdown on '+B[S.cb].nm+'.');S.lw=S.land}
+function control(dt){if(S.dead)return;const l=(K.ArrowLeft||K.KeyA||hold.L?1:0)-(K.ArrowRight||K.KeyD||hold.R?1:0);
+ if(l)S.w=Math.max(-1.3,Math.min(1.3,S.w+l*2.6*dt));else S.w*=Math.exp(-2.2*dt);if(S.land&&!l)S.w=0;
+ const d=(K.KeyW||K.ShiftLeft||K.ArrowUp?1:0)-(K.KeyS||K.ControlLeft||K.ArrowDown?1:0);if(d)setThr(Math.max(0,Math.min(1,S.thr+d*.6*dt)))}
+function particles(dt){
+ if(S.thr>0&&!S.dead&&WARP[S.wi]==1){const ux=Math.cos(S.psi),uy=Math.sin(S.psi),a=PRESS>.05;
+  for(const p of act()){const th=p.k=='srb'?1:S.thr,n=Math.ceil(th*(a?3:2)*dt*60);
+   for(let i=0;i<n;i++){const lu=p.u-p.h/2-PR.c,sp=(a?25:160)+Math.random()*(a?35:140),lat=(Math.random()-.5)*(a?10:60);
+    Q.push({x:S.x+uy*p.x+ux*lu,y:S.y-ux*p.x+uy*lu,vx:S.vx*(a?.3:1)-ux*sp+uy*lat,vy:S.vy*(a?.3:1)-uy*sp-ux*lat,l:0,m:a?3+Math.random()*3:.5+Math.random()*.5,r:p.w*.2,g:a?1.2:6,a:a?.35:.5,dr:a?1.4:0,c:a?'205,205,205':'255,190,120'})}}}
+ for(const q of Q){q.l+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;const f=Math.exp(-q.dr*dt);q.vx*=f;q.vy*=f}
+ Q=Q.filter(q=>q.l<q.m);if(Q.length>700)Q.splice(0,Q.length-700)}
+
+// Procedural art, same palette as the builder. Local units: metres, y up (u).
+function part(p,cu,z){const a=p.w*z/2,b=p.h*z/2,k=p.k,c=COL[k],s=p.x<0?-1:1;cx.save();cx.translate(p.x*z,-(p.u-cu)*z);
+ const g=cx.createLinearGradient(-a,0,a,0);g.addColorStop(0,c[1]);g.addColorStop(.4,c[0]);g.addColorStop(1,c[1]);cx.fillStyle=g;cx.strokeStyle='#1c2b35';cx.lineWidth=Math.max(1,z*.07);cx.lineJoin='round';cx.beginPath();
+ const F=()=>{cx.fill();cx.stroke()};
+ if(k=='pod'){cx.moveTo(-a,b);cx.lineTo(-a,-b*.1);cx.quadraticCurveTo(-a,-b,0,-b);cx.quadraticCurveTo(a,-b,a,-b*.1);cx.lineTo(a,b);cx.closePath();F();cx.beginPath();cx.arc(0,-b*.15,a*.36,0,TAU);cx.fillStyle='#6fb4de';F()}
+ else if(k=='nose'){cx.moveTo(-a,b);cx.quadraticCurveTo(-a*.8,-b*.3,0,-b);cx.quadraticCurveTo(a*.8,-b*.3,a,b);cx.closePath();F()}
+ else if(k=='eng'||k=='vac'){cx.rect(-a*.55,-b,a*1.1,b*.7);F();cx.beginPath();cx.moveTo(-a*.4,-b*.3);cx.lineTo(-a,b);cx.lineTo(a,b);cx.lineTo(a*.4,-b*.3);cx.closePath();cx.fillStyle=c[1];F()}
+ else if(k=='srb'){cx.rect(-a,-b+a*1.6,2*a,2*b-a*1.6-b*.1);F();cx.beginPath();cx.moveTo(-a,-b+a*1.6);cx.quadraticCurveTo(-a,-b,0,-b);cx.quadraticCurveTo(a,-b,a,-b+a*1.6);cx.closePath();F();cx.beginPath();cx.moveTo(-a*.6,b*.9);cx.lineTo(-a*.9,b);cx.lineTo(a*.9,b);cx.lineTo(a*.6,b*.9);cx.closePath();cx.fillStyle=c[1];F()}
+ else if(k=='fin'){cx.moveTo(-s*a,-b);cx.lineTo(s*a,b);cx.lineTo(-s*a,b);cx.closePath();F()}
+ else if(k=='leg'){cx.lineWidth=Math.max(2,z*.14);cx.strokeStyle='#aab3bd';cx.moveTo(-s*a*.5,-b);cx.lineTo(s*a*.7,b);cx.moveTo(s*a*.1,b);cx.lineTo(s*a,b);cx.stroke()}
+ else{cx.rect(-a,-b,2*a,2*b);F();if(k=='tank'){cx.fillStyle='#8896a5';cx.fillRect(-a,-b,2*a,b*.12);cx.fillRect(-a,b*.88,2*a,b*.12)}
+  if(k=='dec'){cx.setLineDash([z*.25,z*.2]);cx.strokeStyle='#e6b130';cx.beginPath();cx.moveTo(-a,0);cx.lineTo(a,0);cx.stroke()}}
+ cx.restore()}
+function flame(p,th,cu,z,t,i){
+ const x=p.x*z,y=-(p.u-p.h/2-cu)*z,vc=1-PRESS,fl=1+.1*Math.sin(t*47+i*2.1)+.07*Math.sin(t*89+i),w0=p.w*z*.5,L=z*(3+7*Math.sqrt(p.F/200))*Math.pow(th,.7)*fl*(1+.5*vc),wd=w0*(.5+1.5*vc)+w0*.3,sw=Math.sin(t*23+i)*w0*.12,
+  c=p.k=='vac'?['190,215,255','110,150,255','60,90,255']:['255,230,170','255,140,40','255,50,0'];
+ cx.save();cx.globalCompositeOperation='lighter';
+ let g=cx.createRadialGradient(x,y,0,x,y,z*4*th+6);g.addColorStop(0,'rgba('+c[1]+',.5)');g.addColorStop(1,'rgba('+c[2]+',0)');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,z*4*th+6,0,TAU);cx.fill();
+ for(const m of[1,.45]){g=cx.createLinearGradient(0,y,0,y+L*(m>.5?1:.55));g.addColorStop(0,m>.5?'rgba('+c[0]+',.95)':'rgba(255,255,255,.95)');g.addColorStop(.3,m>.5?'rgba('+c[1]+',.7)':'rgba('+c[0]+',.6)');g.addColorStop(1,'rgba('+c[2]+',0)');cx.fillStyle=g;
+  const l=L*(m>.5?1:.55),w=wd*m;cx.beginPath();cx.moveTo(x-w0*m/2,y);cx.quadraticCurveTo(x-w,y+l*.4,x+sw,y+l);cx.quadraticCurveTo(x+w,y+l*.4,x+w0*m/2,y);cx.fill()}
+ if(PRESS>.15)for(let k=1;k<4;k++){cx.fillStyle='rgba(255,255,230,'+.5*PRESS+')';cx.beginPath();cx.ellipse(x+sw*k*.2,y+L*(.16*k+.04),w0*.22*(1-.18*k),L*.035,0,0,TAU);cx.fill()}
+ cx.restore()}
+function vehicle(t){
+ if(ART&&ART_BOX&&V.length===ART_COUNT){const b=ART_BOX,x=(b.minX+b.maxX)/2*zf,y=-(ART_UP*(b.minY+b.maxY)/2-PR.c)*zf,w=(b.maxX-b.minX)*zf,h=(b.maxY-b.minY)*zf;
+  cx.save();cx.translate(x,y);if(ART_UP>0)cx.scale(1,-1);cx.drawImage(ART,-w/2,-h/2,w,h);cx.restore()}
+ else V.forEach(p=>part(p,PR.c,zf));
+ let i=0;if(S.thr>0)for(const p of act())flame(p,p.k=='srb'?1:S.thr,PR.c,zf,t,i++)}
+
+function flight(t){
+ const W=innerWidth,H=innerHeight,b=B[S.cb],r=Math.hypot(S.x,S.y),al=r-b.R,phi=Math.atan2(S.y,S.x),A=Math.PI/2-phi,ca=Math.cos(A),sa=Math.sin(A),sx=W/2,sy=H*.6,z=zf,
+  T=(x,y)=>{const dx=x-S.x,dy=y-S.y;return[sx+(dx*ca-dy*sa)*z,sy-(dx*sa+dy*ca)*z]},top=b.atm?b.atm[2]:1,k=b.atm?Math.min(1,Math.max(0,al/(.8*top))):1,sk=b.sky||[0,0,0];
+ cx.fillStyle='rgb('+sk.map(v=>Math.round(v*(1-k)+3*k)).join(',')+')';cx.fillRect(0,0,W,H);
+ if(k>.2){cx.fillStyle='#fff';cx.globalAlpha=(k-.2)/.8;for(const s of ST)cx.fillRect(s[0]*W,s[1]*H,s[2],s[2]);cx.globalAlpha=1}
+ const D=Math.hypot(W,H),pc=T(0,0),disc=Rm=>{const rr=Rm*z;cx.beginPath();if(rr<3*D)cx.arc(pc[0],pc[1],rr,0,TAU);
+  else{const ph=1.2*D/rr+.01;for(let i=0;i<=40;i++){const a=-ph+2*ph*i/40,x=pc[0]+rr*Math.sin(a),y=pc[1]-rr*Math.cos(a);i?cx.lineTo(x,y):cx.moveTo(x,y)}cx.lineTo(pc[0]+rr*Math.sin(ph),H*3);cx.lineTo(pc[0]-rr*Math.sin(ph),H*3);cx.closePath()}cx.fill()};
+ if(b.atm){cx.fillStyle='rgba('+sk.join(',')+',.28)';disc(b.R+top)}
+ cx.fillStyle=b.col;disc(b.R);
+ if(S.cb==2&&al<3e3){const R=b.R,poly=(p,c)=>{cx.fillStyle=c;cx.beginPath();p.forEach((q,i)=>{const s=T(q[0],q[1]);i?cx.lineTo(s[0],s[1]):cx.moveTo(s[0],s[1])});cx.fill()};
+  poly([[-34,R-1.5],[34,R-1.5],[34,R],[-34,R]],'#6b7780');poly([[24,R],[27,R],[27,R+60],[24,R+60]],'#7c8a93');for(let i=1;i<10;i++)poly([[24,R+i*6],[31,R+i*6],[31,R+i*6+.6],[24,R+i*6+.6]],'#9aa7ae')}
+ for(const q of Q){const s=T(q.x,q.y);cx.globalAlpha=Math.max(0,(1-q.l/q.m)*q.a);cx.fillStyle='rgb('+q.c+')';cx.beginPath();cx.arc(s[0],s[1],Math.max(.8,(q.r+q.l*q.g)*z),0,TAU);cx.fill()}cx.globalAlpha=1;
+ if(!S.dead){cx.save();cx.translate(sx,sy);cx.rotate(-(S.psi-phi));vehicle(t);
+  if(S.chute){const c=-PR.top*z-4*z,w=7*z;cx.fillStyle='#e8e9e4';cx.strokeStyle='#d94c37';cx.lineWidth=2;cx.beginPath();cx.moveTo(-w,c);cx.quadraticCurveTo(-w,c-9*z,0,c-9*z);cx.quadraticCurveTo(w,c-9*z,w,c);cx.quadraticCurveTo(0,c+z,-w,c);cx.fill();cx.beginPath();cx.moveTo(-w,c);cx.lineTo(0,-PR.top*z);cx.lineTo(w,c);cx.stroke()}
+  cx.restore()}
+ const sp=Math.hypot(S.vx,S.vy);if(sp>2&&!S.land&&!S.dead){const a=Math.atan2(S.vy,S.vx)+A,mx=sx+Math.cos(a)*90,my=sy-Math.sin(a)*90;cx.strokeStyle='#52c7ea';cx.lineWidth=2;cx.beginPath();cx.arc(mx,my,8,0,TAU);cx.moveTo(mx-14,my);cx.lineTo(mx-8,my);cx.moveTo(mx+8,my);cx.lineTo(mx+14,my);cx.moveTo(mx,my-8);cx.lineTo(mx,my-14);cx.stroke()}}
+
+function mapv(){
+ const W=innerWidth,H=innerHeight,b=B[S.cb],P=(x,y)=>[W/2+(x-mapX)*zm,H/2-(y-mapY)*zm],ring=(c,rad,col,fill)=>{cx.beginPath();cx.arc(c[0],c[1],Math.max(rad,2.5),0,TAU);if(fill){cx.fillStyle=col;cx.fill()}else{cx.strokeStyle=col;cx.stroke()}},
+  tx=(s,c)=>{cx.fillStyle='#9fb7c9';cx.font='12px system-ui,sans-serif';cx.fillText(s,c[0]+8,c[1]-8)},o=P(0,0);
+ cx.fillStyle='#04070d';cx.fillRect(0,0,W,H);cx.lineWidth=1.2;
+ B.forEach((q,i)=>{if(q.par==S.cb){ring(o,q.a*zm,'#243a52');const w=bp(i,UT),c=P(w[0],w[1]);ring(c,q.R*zm,q.col,1);drawMapRings(q,c[0],c[1],zm);tx(q.nm,c)}});
+ if(b.par>=0){const w=bp(S.cb,UT),c=P(-w[0],-w[1]);ring(c,B[b.par].R*zm,B[b.par].col,1);drawMapRings(B[b.par],c[0],c[1],zm);tx(B[b.par].nm,c);ring(o,b.soi*zm,'#2f5578')}
+ if(b.atm)ring(o,(b.R+b.atm[2])*zm,'rgba(110,175,255,.45)',1);
+ ring(o,b.R*zm,b.col,1);drawMapRings(b,o[0],o[1],zm);tx(b.nm,o);
+ const el=elem(),lim=(b.soi||1e11)*3,pts=[],nu=el.e<1?[0,TAU]:[-Math.acos(-1/el.e)*.98,Math.acos(-1/el.e)*.98];
+ for(let i=0;i<=240;i++){const v=nu[0]+(nu[1]-nu[0])*i/240,rr=el.p/(1+el.e*Math.cos(v));if(rr>0&&rr<lim){const a=el.w+el.dir*v;pts.push(P(rr*Math.cos(a),rr*Math.sin(a)))}}
+ cx.strokeStyle='#52c7ea';cx.lineWidth=1.8;cx.beginPath();pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke();
+ const pe=P(el.pe*Math.cos(el.w),el.pe*Math.sin(el.w));ring(pe,3,'#8fe1ad',1);tx('Pe',pe);
+ if(el.e<1){const ap=P(-el.ap*Math.cos(el.w),-el.ap*Math.sin(el.w));ring(ap,3,'#ffb15c',1);tx('Ap',ap)}
+ const s=P(S.x,S.y);ring(s,4,'#fff',1);tx('Rocket',s);cx.fillText('Map: scroll to zoom, M to return',12,H-70)}
+
+function hud(){const b=B[S.cb],r=Math.hypot(S.x,S.y),sp=Math.hypot(S.vx,S.vy),vr=(S.x*S.vx+S.y*S.vy)/r,el=elem(),km=m=>Math.abs(m)>=1e4?(m/1e3).toFixed(Math.abs(m)>=1e7?0:1)+' km':Math.round(m)+' m',
+  F=act().reduce((s,p)=>s+p.F,0),fs=V.reduce((s,p)=>s+(p.s==0?p.f:0),0),stable=el.e<1&&el.pe>b.R+(b.atm?b.atm[2]:0);
+ if(stable&&!S.orb)msg('Stable orbit around '+b.nm+'.',5000);S.orb=stable;
+ $('#flight-state').textContent=paused?'PAUSED':S.dead?'VEHICLE LOST':S.land?'ON PAD':stable?'IN ORBIT':'IN FLIGHT';
+ hudEl.textContent=['FLIGHT DATA  /  '+b.nm.toUpperCase(),'ALTITUDE   '+km(r-b.R),'SPEED      '+Math.round(sp)+' m/s   |   VERT '+Math.round(vr)+' m/s','APOAPSIS   '+(el.e<1?km(el.ap-b.R):'ESCAPE')+'   |   PE '+km(el.pe-b.R),
+  'THROTTLE   '+Math.round(S.thr*100)+'%   |   TWR '+(F?(F/(PR.m*b.mu/(r*r))).toFixed(2):'0.00'),'STAGE FUEL '+fs.toFixed(1)+' t   |   DELTA-V '+Math.round(dv())+' m/s','MASS       '+PR.m.toFixed(1)+' t   |   WARP x'+WARP[S.wi],'GAME COMPLETE '+Math.floor(visited.size/VISITABLE.length*100)+'%   ('+visited.size+'/'+VISITABLE.length+' worlds explored)'].join('\n')}
+
+function frame(now){const dt=Math.min(.05,(now-last)/1e3);last=now;const b=B[S.cb];PRESS=b.atm?Math.exp(-Math.max(Math.hypot(S.x,S.y)-b.R,0)/b.atm[1]):0;
+ if(!paused){control(dt);sim(dt);particles(dt)}props();if(mapOn&&mapFollow){mapX=S.x;mapY=S.y}cx.setTransform(dpr,0,0,dpr,0,0);mapOn?mapv():flight(now/1e3);
+ if(now-hT>120){hT=now;hud()}requestAnimationFrame(frame)}
+function resize(){dpr=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr}
+addEventListener('resize',resize);
+addEventListener('keydown',e=>{K[e.code]=1;const c=e.code;if(!e.repeat){if(c=='Space')stage();else if(c=='KeyM')toggleMap();else if(c=='KeyP')chute();else if(c=='KeyZ')setThr(1);else if(c=='KeyX')setThr(0);else if(c=='Period')warp(1);else if(c=='Comma')warp(-1);else if(c=='KeyO')togglePause();else if(c=='KeyR')reset();else if(mapOn&&(c=='Equal'||c=='NumpadAdd'))mapZoom(1.25);else if(mapOn&&(c=='Minus'||c=='NumpadSubtract'))mapZoom(.8);else if(mapOn&&c=='KeyC')centerMap()}
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(c)||(mapOn&&['Equal','Minus','NumpadAdd','NumpadSubtract'].includes(c)))e.preventDefault()});
+addEventListener('keyup',e=>K[e.code]=0);
+cv.addEventListener('pointerdown',e=>{if(!mapOn)return;mapFollow=0;updateMapTools();mapDrag={id:e.pointerId,x:e.clientX,y:e.clientY,cx:mapX,cy:mapY};cv.setPointerCapture(e.pointerId);cv.classList.add('dragging');e.preventDefault()});
+cv.addEventListener('pointermove',e=>{if(!mapDrag||e.pointerId!==mapDrag.id)return;mapX=mapDrag.cx-(e.clientX-mapDrag.x)/zm;mapY=mapDrag.cy+(e.clientY-mapDrag.y)/zm});
+const endMapDrag=e=>{if(mapDrag&&e.pointerId===mapDrag.id){mapDrag=null;cv.classList.remove('dragging')}};
+cv.addEventListener('pointerup',endMapDrag);cv.addEventListener('pointercancel',endMapDrag);
+cv.addEventListener('wheel',e=>{e.preventDefault();const f=Math.exp(-e.deltaY*.001);if(mapOn)mapZoom(f,e.clientX,e.clientY);else zf=Math.min(60,Math.max(.3,zf*f))},{passive:false});
+$('#st').onclick=stage;$('#pc').onclick=chute;$('#wm').onclick=()=>warp(-1);$('#wp').onclick=()=>warp(1);$('#rs').onclick=reset;$('#pause').onclick=togglePause;
+$('#mp').onclick=toggleMap;$('#map-fit').onclick=fitMap;$('#map-minus').onclick=()=>mapZoom(.8);$('#map-plus').onclick=()=>mapZoom(1.25);$('#map-center').onclick=centerMap;thrEl.oninput=()=>setThr(thrEl.value/100);
+$('#fs').onclick=()=>{if(document.fullscreenElement){document.exitFullscreen?.();return}const p=document.documentElement.requestFullscreen?.();if(p)p.catch(()=>msg('Fullscreen is unavailable in this browser.'))};
+document.addEventListener('fullscreenchange',()=>$('#fs').textContent=document.fullscreenElement?'Exit fullscreen':'Fullscreen');
+[['bl','L'],['br','R']].forEach(([id,k])=>{const e=$('#'+id);e.onpointerdown=()=>hold[k]=1;['pointerup','pointerleave','pointercancel'].forEach(n=>e.addEventListener(n,()=>hold[k]=0))});
+resize();reset();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
