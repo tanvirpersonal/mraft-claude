@@ -28,6 +28,7 @@ try{
 }catch(err){
   console.error('MRAFT 3D Solar System failed to load Three.js',err);
   window.__MRAFT_SOLAR_3D_ERROR__='Three.js failed to load';
+  window.msg?.('3D Solar System failed to load. Check internet/CDN access.',6000);
   return;
 }
 
@@ -134,7 +135,7 @@ function buildScene(){
 
     if(w.moons)w.moons.forEach(m=>{
       const mr=0.45+m[1]*.42;
-      const mg=orbitLine(mr);mg.position.copy(mesh.position);solarGroup.add(mg);
+      const mg=orbitLine(mr);mg.userData={moonOrbit:true,parent:i,radius:mr};mg.position.copy(mesh.position);solarGroup.add(mg);
       const mm=sphere(m[3],m[4]);mm.userData={parent:i,moon:m};solarGroup.add(mm);
       const ml=makeLabel(m[0]);ml.scale.set(1.35,.34,1);solarGroup.add(ml);mm.userData.label=ml;
     });
@@ -214,6 +215,11 @@ function animateWorlds(){
   });
 
   for(const o of solarGroup.children){
+    if(o.userData?.moonOrbit){
+      const p=worldMeshes[o.userData.parent];
+      if(p)o.position.copy(p.position);
+      continue;
+    }
     if(!o.userData?.parent)continue;
     const p=worldMeshes[o.userData.parent],m=o.userData.moon,idx=o.userData.parent;
     const rr=.45+m[1]*.42,a=now/86400000/m[2]+idx;
