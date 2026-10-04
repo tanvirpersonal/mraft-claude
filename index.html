@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>mraft — Spacecraft Construction Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span><strong>MRAFT</strong><small>SPACECRAFT LAB</small></div>
+    <div class="top-actions">
+      <button id="newBtn">NEW</button><button id="saveBtn">SAVE</button><button id="loadBtn">LOAD</button>
+      <button id="launchBtn" class="launch">TEST LAUNCH</button>
+    </div>
+  </header>
+  <main class="app">
+    <aside class="parts panel">
+      <div class="panel-title">PARTS</div>
+      <div class="tabs"><button class="tab active" data-tab="fuel">FUEL</button><button class="tab" data-tab="engines">ENGINES</button><button class="tab" data-tab="structure">STRUCTURE</button><button class="tab" data-tab="payload">PAYLOAD</button></div>
+      <div id="partsList" class="parts-list"></div>
+      <div class="hint">Click a part, then click the workspace to place it. Drag to move. R / right-click rotates. Shift+click enables symmetry placement.</div>
+    </aside>
+
+    <section class="workspace panel">
+      <div class="workspace-head"><div><b id="modeTitle">ROCKET BUILDER</b><span id="status"> READY</span></div><div class="controls">Grid <input id="gridToggle" type="checkbox" checked> &nbsp; Nodes <input id="nodeToggle" type="checkbox" checked></div></div>
+      <div class="canvas-wrap"><canvas id="builder"></canvas><div id="selectionHud" class="selection-hud hidden"></div></div>
+      <div class="builder-foot"><span>Drag parts • Wheel zoom • Middle/space drag pan • Delete removes selection • R rotates</span><span id="stageLabel">STAGES: 0</span></div>
+    </section>
+
+    <aside class="inspector panel">
+      <div class="panel-title">FLIGHT DATA</div>
+      <div class="metrics">
+        <div><span>PARTS</span><strong id="partsMetric">0</strong></div><div><span>MASS</span><strong id="massMetric">0.00 t</strong></div>
+        <div><span>THRUST</span><strong id="thrustMetric">0 kN</strong></div><div><span>TWR</span><strong id="twrMetric">0.00</strong></div>
+        <div><span>Δv</span><strong id="dvMetric">0 m/s</strong></div><div><span>FUEL</span><strong id="fuelMetric">0.00 t</strong></div>
+        <div><span>COM</span><strong id="comMetric">—</strong></div><div><span>STAGES</span><strong id="stagesMetric">0</strong></div>
+      </div>
+      <div class="panel-title stage-title">STAGING</div>
+      <div id="staging" class="staging"></div>
+      <div class="panel-title">SELECTED PART</div>
+      <div id="selectedInfo" class="selected-info">Nothing selected</div>
+      <div class="inspector-actions"><button id="rotateBtn">ROTATE 90°</button><button id="duplicateBtn">DUPLICATE</button><button id="deleteBtn" class="danger">DELETE</button></div>
+    </aside>
+  </main>
+
+  <section id="flight" class="flight hidden">
+    <div class="flight-hud"><b>TEST FLIGHT</b><span id="flightReadout">ALT 0 m · VEL 0 m/s · T+0.0</span><button id="abortBtn">ABORT</button></div>
+    <canvas id="flightCanvas"></canvas>
+    <div class="flight-controls"><button id="stageNext">STAGE</button><span>SPACE / STAGE fires next configured stage</span></div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
