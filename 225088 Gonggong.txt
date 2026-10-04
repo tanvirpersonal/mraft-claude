@@ -1,0 +1,92 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 767500.0,
+    "radiusDifficultyScale": {},
+    "gravity": 0.31,
+    "gravityDifficultyScale": {},
+    "timewarpHeight": 1750.0,
+    "velocityArrowsHeight": "NaN",
+    "mapColor": {
+      "r": 0.6196,
+      "g": 0.5059,
+      "b": 0.4824,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "GongGong",
+      "planetTextureCutout": 0.92,
+      "planetTextureRotation": 0.0,
+      "planetTextureDontDistort": true,
+      "surfaceTexture_A": "Snow",
+      "surfaceTextureSize_A": {
+        "x": 20.0,
+        "y": 10.0
+      },
+      "surfaceTexture_B": "None",
+      "surfaceTextureSize_B": {
+        "x": -1.0,
+        "y": -1.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 150.0,
+        "y": 100.0
+      },
+      "surfaceLayerSize": 20.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 8.0,
+      "shadowHeight": 8.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+      "OUTPUT = AddHeightMap( Cliff, 4822344.7232603326210401575933340369272426, 12553)",
+      "OUTPUT = AddHeightMap( Cliff,4822344.7232603326210401575933340369272426, 7553)",
+      "OUTPUT = AddHeightMap( CliffsCraters, 4822344.7232603326210401575933340369272426, 4223)"
+      ]
+    },
+    "textureFormula": [],
+    "verticeSize": 2.0,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {}
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 1.0,
+        "hueShift": 0.0,
+        "saturation": 1.1,
+        "contrast": 1.1,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "Sun",
+    "semiMajorAxis": 10087085225559.6,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.49795,
+    "argumentOfPeriapsis": 207.523,
+    "direction": -1,
+    "multiplierSOI": 1.55,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": []
+}

@@ -1,0 +1,104 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 108685.0,
+    "radiusDifficultyScale": {},
+    "gravity": 0.04337,
+    "gravityDifficultyScale": {},
+    "timewarpHeight": 3000.0,
+    "velocityArrowsHeight": "NaN",
+    "mapColor": {
+      "r": 0.3490,
+      "g": 0.2980,
+      "b": 0.2980,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "RINGS_DATA": {
+    "ringsTexture": "C2R",
+    "startRadius": 273000.0,
+    "endRadius": 438000.0,
+    "positionZ": 0.0,
+    "mapColor": {
+      "r": 0.3975,
+      "g": 0.3175,
+      "b": 0.3175,
+      "a": 0.2
+    }
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "Asteroid",
+      "planetTextureCutout": 0.9,
+      "planetTextureRotation": 0.0,
+      "planetTextureDontDistort": true,
+      "surfaceTexture_A": "HardRocks02",
+      "surfaceTextureSize_A": {
+        "x": 10.0,
+        "y": 6.0
+      },
+      "surfaceTexture_B": "None",
+      "surfaceTextureSize_B": {
+        "x": -1.0,
+        "y": -1.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 150.0,
+        "y": 50.0
+      },
+      "surfaceLayerSize": 10.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 8.0,
+      "shadowHeight": 8.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+      "OUTPUT = AddHeightMap( Chiron.png, 682887.99511081335624462479222346554193793, 19522)",
+      "OUTPUT = AddHeightMap( Craters, 682887.99511081335624462479222346554193793, 1177)",
+      "PLAINS = AddHeightMap( Noise, 682887.99511081335624462479222346554193793, 754)"
+      ]
+    },
+    "textureFormula": [],
+    "verticeSize": 2.0,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {}
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 1.0,
+        "hueShift": 0.0,
+        "saturation": 1.0,
+        "contrast": 1.1,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "Sun",
+    "semiMajorAxis": 2047352491586.001,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.3787836,
+    "argumentOfPeriapsis": 339.81020,
+    "direction": -1,
+    "multiplierSOI": 1.7543385,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": []
+}

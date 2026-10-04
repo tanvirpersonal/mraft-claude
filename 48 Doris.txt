@@ -1,0 +1,92 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 108000.0,
+    "radiusDifficultyScale": {},
+    "gravity": 0.0393,
+    "gravityDifficultyScale": {},
+    "timewarpHeight": 3000.0,
+    "velocityArrowsHeight": "NaN",
+    "mapColor": {
+      "r": 0.62294,
+      "g": 0.62294,
+      "b": 0.62294,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "Ceres",
+      "planetTextureCutout": 0.5,
+      "planetTextureRotation": 27.4,
+      "planetTextureDontDistort": true,
+      "surfaceTexture_A": "HardRocks02",
+      "surfaceTextureSize_A": {
+        "x": 10.0,
+        "y": 6.0
+      },
+      "surfaceTexture_B": "None",
+      "surfaceTextureSize_B": {
+        "x": -1.0,
+        "y": -1.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 150.0,
+        "y": 50.0
+      },
+      "surfaceLayerSize": 10.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 8.0,
+      "shadowHeight": 8.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+        "OUTPUT = AddHeightMap(Doris.png,678584.01317539533950793097078837262298658, 48342)",
+        "OUTPUT = AddHeightMap(Perlin,678584.01317539533950793097078837262298658, 75)",
+        "OUTPUT = AddHeightMap(Noise,678584.01317539533950793097078837262298658, 50)"
+      ]
+    },
+    "textureFormula": [],
+    "verticeSize": 2.0,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {}
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 1.0,
+        "hueShift": 0.0,
+        "saturation": 1.0,
+        "contrast": 1.1,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "Sun",
+    "semiMajorAxis": 465249377877.0,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.075,
+    "argumentOfPeriapsis": 257.584,
+    "direction": -1,
+    "multiplierSOI": 1.0,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": []
+}
