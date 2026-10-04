@@ -46,11 +46,30 @@ body.map-active canvas{cursor:grab}body.map-active canvas.dragging{cursor:grabbi
 <div class="group"><button id="wm" aria-label="Decrease time warp" title="Decrease time warp (,)">Warp &minus;</button><button id="wp" aria-label="Increase time warp" title="Increase time warp (.)">Warp +</button></div>
 <div class="group"><button id="pause" aria-pressed="false" title="Pause simulation">Pause</button><button id="fs" title="Toggle fullscreen">Fullscreen</button><button id="rs" title="Restart flight (R)">Restart</button></div>
 </div>
+<script src="rocket-renderer.js"></script>
 <script>
 const g0=9.81,TAU=Math.PI*2,KEY='rocket-builder-blueprint',$=q=>document.querySelector(q),cv=$('#c'),cx=cv.getContext('2d'),hudEl=$('#hud'),msgEl=$('#msg'),thrEl=$('#thr');
 // Part catalog (same ids as the builder): [w,h,dry t,fuel t,thrust kN,isp s,kind]
-const U={pod:[2,1.8,1.2,0,0,0,'pod'],nose:[2,2,.2,0,0,0,'nose'],t1:[2,2,.2,1.8,0,0,'tank'],t2:[2,4,.4,3.6,0,0,'tank'],t3:[3,4,.8,8.1,0,0,'tank'],t4:[3,6,1.2,12.2,0,0,'tank'],e1:[2,2,.9,0,220,290,'eng'],e2:[2,1.8,.7,0,90,380,'vac'],e3:[2,2.6,2.2,0,540,295,'eng'],e4:[2.4,2.4,1.6,0,300,360,'vac'],b1:[1.2,5,.5,6,300,240,'srb'],b2:[1.6,7,.8,10,520,245,'srb'],dc:[2,.4,.1,0,0,0,'dec'],fin:[1.4,2,.1,0,0,0,'fin'],leg:[1.6,2.6,.15,0,0,0,'leg'],para:[1.6,1.4,.15,0,0,0,'para'],dock:[1.2,.8,.1,0,0,0,'dock'],solar:[2,1.8,.15,0,0,0,'solar']};
-const COL={pod:['#eef2f6','#aeb8c3'],nose:['#e9edf1','#a9b4bf'],tank:['#e6e9ed','#9aa6b2'],eng:['#8d98a4','#4c5662'],vac:['#c9a36a','#7a5a2e'],srb:['#f0f2f4','#aab3bd'],dec:['#6f7a86','#3d4650'],fin:['#c9d1d9','#7f8c99'],leg:['#9aa6b2','#59646f'],para:['#e8e9e4','#aab2ba'],dock:['#aab3bd','#59646f'],solar:['#2a6db3','#123a66']};
+const U={
+pod:[2,1.8,1.2,0,0,0,'pod'],
+nose:[2,2,.2,0,0,0,'nose'],
+t1:[2,2,.2,1.8,0,0,'tank'],
+t2:[2,4,.4,3.6,0,0,'tank'],
+t3:[3,4,.8,8.1,0,0,'tank'],
+t4:[3,6,1.2,12.6,0,0,'tank'],
+e1:[2,2,.9,0,220,290,'eng'],
+e2:[2,1.8,.7,0,90,380,'vac'],
+e3:[3,2.6,1.4,0,480,310,'eng'],
+b1:[1.2,5,.5,6,300,240,'srb'],
+b2:[1.6,7,.8,10,420,250,'srb'],
+dc:[2,.4,.1,0,0,0,'dec'],
+para:[2,1.6,.3,0,0,0,'para'],
+dock:[1.2,.8,.2,0,0,0,'dock'],
+solar:[2,3,.25,0,0,0,'solar'],
+fin:[1.4,2,.1,0,0,0,'fin'],
+leg:[1.6,2.6,.15,0,0,0,'leg']
+};
+const COL=MRAFT_ROCKET_RENDERER.COL;
 const SAMPLE=[['pod',0,0],['t2',0,2.9],['e2',0,5.8],['dc',0,6.9],['t3',0,9.1],['e1',0,12.1],['b1',-2.1,8.6],['b1',2.1,8.6],['leg',-1.8,11.8],['leg',1.8,11.8]];
 // Bodies: R m, mu m3/s2, a orbit radius m, atm [sea-level kg/m3, scale height m, top m]
 const B=[{nm:'Sun',par:-1,R:2e7,mu:1e16,col:'#ffd27a'},
@@ -148,18 +167,15 @@ function particles(dt){
  Q=Q.filter(q=>q.l<q.m);if(Q.length>700)Q.splice(0,Q.length-700)}
 
 // Procedural art, same palette as the builder. Local units: metres, y up (u).
-function part(p,cu,z){const a=p.w*z/2,b=p.h*z/2,k=p.k,c=COL[k],s=p.x<0?-1:1;cx.save();cx.translate(p.x*z,-(p.u-cu)*z);
- const g=cx.createLinearGradient(-a,0,a,0);g.addColorStop(0,c[1]);g.addColorStop(.4,c[0]);g.addColorStop(1,c[1]);cx.fillStyle=g;cx.strokeStyle='#1c2b35';cx.lineWidth=Math.max(1,z*.07);cx.lineJoin='round';cx.beginPath();
- const F=()=>{cx.fill();cx.stroke()};
- if(k=='pod'){cx.moveTo(-a,b);cx.lineTo(-a,-b*.1);cx.quadraticCurveTo(-a,-b,0,-b);cx.quadraticCurveTo(a,-b,a,-b*.1);cx.lineTo(a,b);cx.closePath();F();cx.beginPath();cx.arc(0,-b*.15,a*.36,0,TAU);cx.fillStyle='#6fb4de';F()}
- else if(k=='nose'){cx.moveTo(-a,b);cx.quadraticCurveTo(-a*.8,-b*.3,0,-b);cx.quadraticCurveTo(a*.8,-b*.3,a,b);cx.closePath();F()}
- else if(k=='eng'||k=='vac'){cx.rect(-a*.55,-b,a*1.1,b*.7);F();cx.beginPath();cx.moveTo(-a*.4,-b*.3);cx.lineTo(-a,b);cx.lineTo(a,b);cx.lineTo(a*.4,-b*.3);cx.closePath();cx.fillStyle=c[1];F()}
- else if(k=='srb'){cx.rect(-a,-b+a*1.6,2*a,2*b-a*1.6-b*.1);F();cx.beginPath();cx.moveTo(-a,-b+a*1.6);cx.quadraticCurveTo(-a,-b,0,-b);cx.quadraticCurveTo(a,-b,a,-b+a*1.6);cx.closePath();F();cx.beginPath();cx.moveTo(-a*.6,b*.9);cx.lineTo(-a*.9,b);cx.lineTo(a*.9,b);cx.lineTo(a*.6,b*.9);cx.closePath();cx.fillStyle=c[1];F()}
- else if(k=='fin'){cx.moveTo(-s*a,-b);cx.lineTo(s*a,b);cx.lineTo(-s*a,b);cx.closePath();F()}
- else if(k=='leg'){cx.lineWidth=Math.max(2,z*.14);cx.strokeStyle='#aab3bd';cx.moveTo(-s*a*.5,-b);cx.lineTo(s*a*.7,b);cx.moveTo(s*a*.1,b);cx.lineTo(s*a,b);cx.stroke()}
- else{cx.rect(-a,-b,2*a,2*b);F();if(k=='tank'){cx.fillStyle='#8896a5';cx.fillRect(-a,-b,2*a,b*.12);cx.fillRect(-a,b*.88,2*a,b*.12)}
-  if(k=='dec'){cx.setLineDash([z*.25,z*.2]);cx.strokeStyle='#e6b130';cx.beginPath();cx.moveTo(-a,0);cx.lineTo(a,0);cx.stroke()}}
- cx.restore()}
+const visualPart=id=>{const d=U[id];return{id,w:d[0],h:d[1],k:d[6]};};
+const side=u=>u.k=='fin'||u.k=='leg';
+
+function part(p,cu,z){
+ const u=visualPart(p.id);
+ const x=p.x*z,y=-(p.u-cu)*z;
+ const flip=(u.k=='fin'||u.k=='leg')&&p.x<0;
+ MRAFT_ROCKET_RENDERER.draw(cx,u,x,y,z,flip,!!p.deployed);
+}
 function flame(p,th,cu,z,t,i){
  const x=p.x*z,y=-(p.u-p.h/2-cu)*z,vc=1-PRESS,fl=1+.1*Math.sin(t*47+i*2.1)+.07*Math.sin(t*89+i),w0=p.w*z*.5,L=z*(3+7*Math.sqrt(p.F/200))*Math.pow(th,.7)*fl*(1+.5*vc),wd=w0*(.5+1.5*vc)+w0*.3,sw=Math.sin(t*23+i)*w0*.12,
   c=p.k=='vac'?['190,215,255','110,150,255','60,90,255']:['255,230,170','255,140,40','255,50,0'];
@@ -170,10 +186,10 @@ function flame(p,th,cu,z,t,i){
  if(PRESS>.15)for(let k=1;k<4;k++){cx.fillStyle='rgba(255,255,230,'+.5*PRESS+')';cx.beginPath();cx.ellipse(x+sw*k*.2,y+L*(.16*k+.04),w0*.22*(1-.18*k),L*.035,0,0,TAU);cx.fill()}
  cx.restore()}
 function vehicle(t){
- if(ART&&ART_BOX&&V.length===ART_COUNT){const b=ART_BOX,x=(b.minX+b.maxX)/2*zf,y=-(ART_UP*(b.minY+b.maxY)/2-PR.c)*zf,w=(b.maxX-b.minX)*zf,h=(b.maxY-b.minY)*zf;
-  cx.save();cx.translate(x,y);if(ART_UP>0)cx.scale(1,-1);cx.drawImage(ART,-w/2,-h/2,w,h);cx.restore()}
- else V.forEach(p=>part(p,PR.c,zf));
- let i=0;if(S.thr>0)for(const p of act())flame(p,p.k=='srb'?1:S.thr,PR.c,zf,t,i++)}
+ V.forEach(p=>part(p,PR.c,zf));
+ let i=0;
+ if(S.thr>0)for(const p of act())flame(p,p.k=='srb'?1:S.thr,PR.c,zf,t,i++);
+}
 
 function flight(t){
  const W=innerWidth,H=innerHeight,b=B[S.cb],r=Math.hypot(S.x,S.y),al=r-b.R,phi=Math.atan2(S.y,S.x),A=Math.PI/2-phi,ca=Math.cos(A),sa=Math.sin(A),sx=W/2,sy=H*.6,z=zf,
