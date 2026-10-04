@@ -8,7 +8,7 @@ if(window.__MRAFT_SOLAR_3D__)return;
 window.__MRAFT_SOLAR_3D__=true;
 
 const SOLAR_STATE_KEY='mraft-solar-flight-state';
-const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js';
+const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
 const WORLDS=[
  {name:'Mercury',a:.39,T:.241,r:.24,c:0x9b9690},
