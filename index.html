@@ -61,6 +61,10 @@ dl{grid-template-columns:repeat(6,auto);gap:2px 8px}dd{text-align:left}
 <button class="b" id="zi" aria-label="Zoom in">+</button>
 <button class="b" id="zo" aria-label="Zoom out">&minus;</button>
 <button class="b" id="sp" aria-pressed="false" disabled>Unfold panel</button>
+<button class="b" id="ss" aria-pressed="false">Stage select</button>
+<button class="b" id="cs" disabled>Create stage</button>
+<button class="b" id="us" disabled>Unstage</button>
+<span id="stage-info" aria-live="polite"></span>
 <span id="msg" aria-live="polite"></span>
 </div>
 <div class="card"><dl id="sm"></dl><div id="st"></div></div>
@@ -92,11 +96,11 @@ const U=[
 ].map(([id,n,g,w,h,m,f,t,i,k])=>({id,n,g,w,h,m,f,t,i,k}));
 const COL=MRAFT_ROCKET_RENDERER.COL;
 const draw=MRAFT_ROCKET_RENDERER.draw;
-let W=0,H=0,D=1,parts=[],sel=null,drag=null,pan=null,mirror=true,init=0,ft,cam={x:0,y:0,s:22};
+let W=0,H=0,D=1,parts=[],sel=null,drag=null,pan=null,mirror=true,stageMode=false,stagePick=new Set(),init=0,ft,cam={x:0,y:0,s:22};
 const side=u=>u.k=='fin'||u.k=='leg';
 const toW=(x,y)=>[(x-W/2)/cam.s+cam.x,(y-H/2)/cam.s+cam.y];
 const pt=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
-const mk=(u,x,y)=>{const p={u,x,y,tw:null,deployed:false};parts.push(p);return p};
+const mk=(u,x,y,stage=0)=>{const p={u,x,y,tw:null,deployed:false,stage};parts.push(p);return p};
 const flash=t=>{$('#msg').textContent=t;clearTimeout(ft);ft=setTimeout(()=>$('#msg').textContent='',1800)};
 
 // Procedural part art, drawn centred on (x,y); s = pixels per unit
@@ -112,10 +116,13 @@ function snap(p){
  sync(p)}
 // Symmetry: off-centre parts get a mirrored twin about the centre line
 function sync(p){const t=p.tw,off=Math.abs(p.x)>.05;
- if(t&&!off){parts.splice(parts.indexOf(t),1);if(sel===t)sel=p;p.tw=null}
- else if(!t&&off&&mirror){p.tw=mk(p.u,0,0);p.tw.tw=p}
- if(p.tw){p.tw.x=-p.x;p.tw.y=p.y}}
-function del(p){[p,p.tw].forEach(q=>{const i=parts.indexOf(q);if(i>=0)parts.splice(i,1)});if(p.tw)p.tw.tw=null;if(sel===p||sel===p.tw)sel=null}
+ if(t&&!off){parts.splice(parts.indexOf(t),1);stagePick.delete(t);if(sel===t)sel=p;p.tw=null}
+ else if(!t&&off&&mirror){p.tw=mk(p.u,0,0,p.stage);p.tw.tw=p}
+ if(p.tw){p.tw.x=-p.x;p.tw.y=p.y;p.tw.stage=p.stage}}
+function del(p){[p,p.tw].forEach(q=>{const i=parts.indexOf(q);if(i>=0)parts.splice(i,1);stagePick.delete(q)});if(p.tw)p.tw.tw=null;if(sel===p||sel===p.tw)sel=null}
+function toggleStagePick(p){const pair=[p,p.tw].filter(Boolean),remove=pair.every(q=>stagePick.has(q));for(const q of pair)remove?stagePick.delete(q):stagePick.add(q)}
+function createStage(){if(!stagePick.size)return;const n=Math.max(0,...parts.map(p=>p.stage||0))+1;for(const p of stagePick){p.stage=n;if(p.tw)p.tw.stage=n}stagePick.clear();flash('Stage '+n+' created');render()}
+function unstagePicked(){for(const p of stagePick){p.stage=0;if(p.tw)p.tw.stage=0}stagePick.clear();render()}
 function auto(p){const o=parts.filter(q=>q!==p),top=p.u.k=='pod'||p.u.k=='nose';
  p.x=0;p.y=o.length?(top?Math.min(...o.map(q=>q.y-q.u.h/2))-p.u.h/2:Math.max(...o.map(q=>q.y+q.u.h/2))+p.u.h/2):0}
 
@@ -133,11 +140,16 @@ function render(){
  ctx.globalAlpha=1;ctx.strokeStyle=V('--ac');ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(cx(0),0);ctx.lineTo(cx(0),H);ctx.stroke();ctx.setLineDash([]);
  for(const p of parts)draw(ctx,p.u,cx(p.x),cy(p.y),s,(side(p.u)||p.u.k=='solar')&&p.x<0,p.deployed);
  drawJoinAdapters();
+ for(const p of parts)if(p.stage){const x=cx(p.x),y=cy(p.y)-p.u.h*s/2-12;ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='rgba(8,20,30,.82)';ctx.fillRect(x-13,y-10,26,16);ctx.fillStyle=V('--ac');ctx.fillText('S'+p.stage,x,y+2)}
+ for(const p of stagePick){const w=p.u.w*s,h=p.u.h*s;ctx.strokeStyle=V('--wn');ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(cx(p.x)-w/2-5,cy(p.y)-h/2-5,w+10,h+10);ctx.setLineDash([])}
  if(sel){const w=sel.u.w*s,h=sel.u.h*s;ctx.strokeStyle=V('--ac');ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.strokeRect(cx(sel.x)-w/2-4,cy(sel.y)-h/2-4,w+8,h+8);ctx.setLineDash([])}
  const S=stats();
  if(S.com){const x=cx(S.com[0]),y=cy(S.com[1]);ctx.strokeStyle=ctx.fillStyle=V('--wn');ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.moveTo(x-11,y);ctx.lineTo(x+11,y);ctx.moveTo(x,y-11);ctx.lineTo(x,y+11);ctx.stroke();ctx.font='12px "Barlow Semi Condensed",system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('CoM',x+12,y-9)}
  else{ctx.fillStyle=V('--mu');ctx.textAlign='center';ctx.font='15px "Barlow Semi Condensed",system-ui,sans-serif';ctx.fillText('Drag a part onto the grid, or tap one to stack it.',W/2,H/2)}
  const sp=$('#sp'),solarSelected=sel?.u.id=='solar';sp.disabled=!solarSelected;sp.textContent=solarSelected&&sel.deployed?'Fold panel':'Unfold panel';sp.setAttribute('aria-pressed',solarSelected&&sel.deployed);
+ $('#ss').setAttribute('aria-pressed',stageMode);$('#ss').textContent=stageMode?'Stage select: ON':'Stage select';
+ $('#cs').disabled=!stagePick.size;$('#us').disabled=!stagePick.size;
+ $('#stage-info').textContent=stageMode?`Tap parts to select · ${stagePick.size} selected · ${new Set(parts.map(p=>p.stage).filter(Boolean)).size} stages`:`${stagePick.size} selected · ${new Set(parts.map(p=>p.stage).filter(Boolean)).size} stages`;
  $('#sm').innerHTML=[['Mass',S.m.toFixed(1)+' t'],['Fuel',S.f.toFixed(1)+' t'],['Thrust',Math.round(S.F)+' kN'],['TWR',S.twr.toFixed(2)],['Δv',Math.round(S.dv).toLocaleString()+' m/s'],['Parts',parts.length]].map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('');
  const bad=!parts.some(q=>q.u.k=='pod')?'Add a command pod':!S.F?'Add an engine':!S.f?'Add a fuel tank':S.twr<1?'TWR is under 1: add thrust or remove mass':'';
  const st=$('#st');st.textContent=bad||'Ready to launch';st.className=bad?'':'ok'}
@@ -194,7 +206,7 @@ const pal=$('#pal');
 
 cv.addEventListener('pointerdown',e=>{
  const[x,y]=pt(e),[wx,wy]=toW(x,y),h=[...parts].reverse().find(q=>Math.abs(wx-q.x)<=q.u.w/2&&Math.abs(wy-q.y)<=q.u.h/2||q.u.k=='solar'&&q.deployed&&Math.abs(wy-q.y)<=q.u.w*.4&&(q.x<0?wx>=q.x-q.u.w*2.25:wx<=q.x+q.u.w*2.25));
- if(h){sel=h;drag={p:h,ox:h.x-wx,oy:h.y-wy,x0:e.clientX,y0:e.clientY}}else{sel=null;pan={x,y,cx:cam.x,cy:cam.y}}
+ if(h){sel=h;if(stageMode){toggleStagePick(h);render();return}drag={p:h,ox:h.x-wx,oy:h.y-wy,x0:e.clientX,y0:e.clientY}}else{sel=null;pan={x,y,cx:cam.x,cy:cam.y}}
  render()});
 addEventListener('pointermove',e=>{
  const[x,y]=pt(e);
@@ -210,17 +222,19 @@ addEventListener('pointercancel',()=>{if(drag&&drag.pal)del(drag.p);drag=pan=nul
 cv.addEventListener('wheel',e=>{e.preventDefault();const[x,y]=pt(e);zoom(Math.exp(-e.deltaY*.0015),x,y)},{passive:false});
 addEventListener('keydown',e=>{if((e.key=='Delete'||e.key=='Backspace')&&sel){del(sel);render()}});
 
+$('#ss').onclick=e=>{stageMode=!stageMode;e.currentTarget.setAttribute('aria-pressed',stageMode);render()};
+$('#cs').onclick=createStage;$('#us').onclick=unstagePicked;
 $('#mi').onclick=e=>{mirror=!mirror;e.currentTarget.setAttribute('aria-pressed',mirror);if(!mirror)parts.forEach(p=>p.tw=null);render()};
 $('#de').onclick=()=>{if(sel){del(sel);render()}};
-$('#cl').onclick=()=>{parts=[];sel=null;render()};
+$('#cl').onclick=()=>{parts=[];sel=null;stagePick.clear();render()};
 $('#zi').onclick=()=>zoom(1.25);$('#zo').onclick=()=>zoom(.8);
 $('#sp').onclick=()=>{if(sel?.u.id=='solar'){sel.deployed=!sel.deployed;render()}};
 const KEY='rocket-builder-blueprint';
-function saveBlueprint(){try{localStorage.setItem(KEY,JSON.stringify(parts.map(p=>[p.u.id,p.x,p.y,parts.indexOf(p.tw),p.deployed])));return true}catch{flash('Saving is blocked in this browser');return false}}
+function saveBlueprint(){try{localStorage.setItem(KEY,JSON.stringify(parts.map(p=>[p.u.id,p.x,p.y,parts.indexOf(p.tw),p.deployed,p.stage||0])));return true}catch{flash('Saving is blocked in this browser');return false}}
 $('#sv').onclick=()=>{if(saveBlueprint())flash('Saved')};
 $('#launch').onclick=()=>{if(saveBlueprint())location.href='launch-pad.html'};
 $('#ld').onclick=()=>{try{const a=JSON.parse(localStorage.getItem(KEY));if(!a)return flash('Nothing saved yet');
- parts=[];sel=null;a.forEach(([id,x,y,,deployed])=>{const p=mk(U.find(u=>u.id==id),x,y);p.deployed=!!deployed});a.forEach((r,i)=>{if(r[3]>=0)parts[i].tw=parts[r[3]]});fitRocket();flash('Loaded');render()}catch{parts=[];flash('Could not read that save');render()}};
+ parts=[];sel=null;stagePick.clear();a.forEach(([id,x,y,,deployed,stage])=>{const p=mk(U.find(u=>u.id==id),x,y,Number.isInteger(stage)?stage:0);p.deployed=!!deployed});a.forEach((r,i)=>{if(r[3]>=0)parts[i].tw=parts[r[3]]});fitRocket();flash('Loaded');render()}catch{parts=[];flash('Could not read that save');render()}};
 
 // Starter rocket
 const add=(id,x,y)=>sync(mk(U.find(u=>u.id==id),x,y));
