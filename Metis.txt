@@ -1,0 +1,112 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 21500.0,
+    "radiusDifficultyScale": {
+      "Normal": 1.0,
+      "Hard": 1.0,
+      "Realistic": 1.0
+    },
+    "gravity": 0.013,
+    "gravityDifficultyScale": {
+      "Normal": 1.0,
+      "Hard": 1.0,
+      "Realistic": 1.0
+    },
+    "timewarpHeight": 2000.0,
+    "velocityArrowsHeight": -1000.0,
+    "mapColor": {
+      "r": 1.0,
+      "g": 0.6588,
+      "b": 0.5137,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "JARONA",
+      "planetTextureCutout": 0.25329,
+      "planetTextureRotation": 0.0,
+      "planetTextureDontDistort": false,
+      "surfaceTexture_A": "Blured02",
+      "surfaceTextureSize_A": {
+        "x": 16.0,
+        "y": 10.0
+      },
+      "surfaceTexture_B": "Neutral",
+      "surfaceTextureSize_B": {
+        "x": 24.0,
+        "y": 24.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 200.0,
+        "y": 150.0
+      },
+      "surfaceLayerSize": 10.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 1.5,
+      "shadowHeight": 4.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+        "OUTPUT = AddHeightMap( MetisT.png, 135088.4841043611, 15933)",
+        "OUTPUT = AddHeightMap( Perlin, 135088.4841043611, 175)",
+        "OUTPUT = AddHeightMap( Perlin, 33772.12102609027, 100)",
+        "M      = AddHeightMap( Noise, 16886.06051304513, 177)",
+        "OUTPUT = AddHeightMap( Craters, 8443.030256522565, 58)"
+      ]
+    },
+    "textureFormula": [
+      "OUTPUT = AddHeightMap( Perlin, 135088.4841043611, 0.74, Curve4)"
+    ],
+    "verticeSize": 0.5,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {},
+    "rocks": {
+      "rockType": "Rock Square",
+      "rockDensity": 1.1,
+      "minSize": 0.3,
+      "maxSize": 0.5,
+      "powerCurve": 2.2,
+      "maxAngle": 40.0
+    }
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 0.0,
+        "hueShift": 0.0,
+        "saturation": 0.8,
+        "contrast": 1.0,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "Jupiter",
+    "semiMajorAxis": 127980000.0,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.0002,
+    "argumentOfPeriapsis": 81.25111,
+    "direction": -1,
+    "multiplierSOI": 17.11822,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": []
+}

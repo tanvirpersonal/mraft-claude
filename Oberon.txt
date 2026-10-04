@@ -1,0 +1,101 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 761400.0,
+    "radiusDifficultyScale": {},
+    "gravity": 0.358,
+    "gravityDifficultyScale": {},
+    "timewarpHeight": 3000.0,
+    "velocityArrowsHeight": "NaN",
+    "mapColor": {
+      "r": 0.7372,
+      "g": 0.8039,
+      "b": 0.8823,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "Oberon",
+      "planetTextureCutout": 0.98,
+      "planetTextureRotation": 0.0,
+      "planetTextureDontDistort": true,
+      "surfaceTexture_A": "Dots02",
+      "surfaceTextureSize_A": {
+        "x": 30.0,
+        "y": 15.0
+      },
+      "surfaceTexture_B": "Dots02",
+      "surfaceTextureSize_B": {
+        "x": 40.0,
+        "y": 20.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 100.0,
+        "y": 50.0
+      },
+      "surfaceLayerSize": 20.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 8.0,
+      "shadowHeight": 8.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+        "OUTPUT = AddHeightMap(OberonChasma,4784017.292886537, 5000)",
+        "OUTPUT = AddHeightMap(Craters,4784017.292886537, 2500)",
+        "OUTPUT = AddHeightMap(Craters,4784017.292886537, 1500)",
+        "OUTPUT = AddHeightMap(Craters,4784017.292886537, 1000)",
+        "OUTPUT = AddHeightMap(Perlin,4784017.292886537, 80)",
+        "OUTPUT = AddHeightMap(Noise,4784017.292886537, 70)"
+      ]
+    },
+    "textureFormula": [],
+    "verticeSize": 2.0,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {}
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 1.0,
+        "hueShift": 0.0,
+        "saturation": 0.8,
+        "contrast": 1.0,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "Uranus",
+    "semiMajorAxis": 583511000.0,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.002,
+    "argumentOfPeriapsis": 132.2,
+    "direction": -1,
+    "multiplierSOI": 1.0,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": [
+    {
+      "name": "Mommur Chasma",
+      "startAngle": 63.0,
+      "endAngle": 73.0
+    }
+  ]
+}

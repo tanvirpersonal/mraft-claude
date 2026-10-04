@@ -1,0 +1,44 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 0.0,
+    "gravity": 0.0,
+    "timewarpHeight": 50000.0,
+    "mapColor": {
+      "r": 1.0,
+      "g": 0.97,
+      "b": 0.785,
+      "a": 1.0
+    }
+  },
+  "RINGS_DATA": {
+    "ringsTexture": "C2R",
+    "startRadius": 404000.0,
+    "endRadius": 407000.0,
+    "positionZ": 0.0,
+    "mapColor": {
+      "r": 0.3975,
+      "g": 0.3175,
+      "b": 0.3175,
+      "a": 0.075
+    }
+  },
+  "POST_PROCESSING": {
+    "keys": []
+  },
+  "ORBIT_DATA": {
+    "parent": "10199 Chariklo",
+    "semiMajorAxis": 0,
+    "eccentricity": 0.0,
+    "argumentOfPeriapsis": 0.0,
+    "multiplierSOI": 0.0,
+    "orbitLineResolution": 0
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  }
+}

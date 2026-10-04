@@ -1,0 +1,92 @@
+{
+  "version": "1.5",
+  "BASE_DATA": {
+    "radius": 5500.0,
+    "radiusDifficultyScale": {},
+    "gravity": 0.0021,
+    "gravityDifficultyScale": {},
+    "timewarpHeight": 3000.0,
+    "velocityArrowsHeight": "NaN",
+    "mapColor": {
+      "r": 0.4475,
+      "g": 0.4475,
+      "b": 0.4475,
+      "a": 1.0
+    },
+    "significant": true,
+    "rotateCamera": true
+  },
+  "TERRAIN_DATA": {
+    "TERRAIN_TEXTURE_DATA": {
+      "planetTexture": "Ceres",
+      "planetTextureCutout": 0.5,
+      "planetTextureRotation": 27.4,
+      "planetTextureDontDistort": true,
+      "surfaceTexture_A": "HardRocks02",
+      "surfaceTextureSize_A": {
+        "x": 10.0,
+        "y": 6.0
+      },
+      "surfaceTexture_B": "None",
+      "surfaceTextureSize_B": {
+        "x": -1.0,
+        "y": -1.0
+      },
+      "terrainTexture_C": "Neutral",
+      "terrainTextureSize_C": {
+        "x": 150.0,
+        "y": 50.0
+      },
+      "surfaceLayerSize": 10.0,
+      "minFade": 0.0,
+      "maxFade": 0.9,
+      "shadowIntensity": 8.0,
+      "shadowHeight": 8.0
+    },
+    "terrainFormulaDifficulties": {
+      "Normal": [
+        "OUTPUT = AddHeightMap(Romulus.png,34557.51918948772, 9325)",
+        "OUTPUT = AddHeightMap(Perlin,34557.51918948772, 75)",
+        "OUTPUT = AddHeightMap(Noise,34557.51918948772, 50)"
+      ]
+    },
+    "textureFormula": [],
+    "verticeSize": 2.0,
+    "collider": true,
+    "flatZones": [],
+    "flatZonesDifficulties": {}
+  },
+  "POST_PROCESSING": {
+    "keys": [
+      {
+        "height": 0.0,
+        "shadowIntensity": 1.75,
+        "starIntensity": 1.0,
+        "hueShift": 0.0,
+        "saturation": 1.0,
+        "contrast": 1.1,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 1.0
+      }
+    ]
+  },
+  "ORBIT_DATA": {
+    "parent": "87 Sylvia",
+    "semiMajorAxis": 1351350.0,
+    "smaDifficultyScale": {},
+    "eccentricity": 0.0069,
+    "argumentOfPeriapsis": 175.0,
+    "direction": -1,
+    "multiplierSOI": 5.5,
+    "soiDifficultyScale": {}
+  },
+  "ACHIEVEMENT_DATA": {
+    "Landed": true,
+    "Takeoff": true,
+    "Atmosphere": true,
+    "Orbit": true,
+    "Crash": true
+  },
+  "LANDMARKS": []
+}
