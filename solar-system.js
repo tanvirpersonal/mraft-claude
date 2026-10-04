@@ -34,9 +34,7 @@ function sky(){
   if(i){const gx=x+sx/l*rp*.45,gy=y-sy/l*rp*.45,g=cx.createRadialGradient(gx,gy,rp*.05,gx,gy,rp*1.5);g.addColorStop(0,'rgba(255,255,255,.28)');g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,10,.78)');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,rp,0,TAU);cx.fill()}
   if(i===tg){cx.strokeStyle='#ffb15c';cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,rp+7,0,TAU);cx.stroke()}
   cx.restore()}}
-// Paint the sky objects right after the original sky fill, so planet, pad and rocket stay in front
-const _fl=flight,_fr=CanvasRenderingContext2D.prototype.fillRect;
-window.flight=function(t){let first=1;cx.fillRect=function(x,y,w,h){_fr.call(cx,x,y,w,h);if(first&&w>=innerWidth-1){first=0;sky()}};try{_fl(t)}finally{delete cx.fillRect}};
+window.__solarBeforeTerrain=sky;
 
 // 4. Transfer planner (Hohmann): phase angle now vs ideal, time to window, departure burn
 function plan(){
@@ -53,10 +51,9 @@ function plan(){
  let d=((ideal-cur)*Math.sign(dw))%TAU;d=(d+TAU)%TAU;
  const bd=c1<0?Math.abs(vi):c1===S.cb?Math.sqrt(vi*vi+2*B[c1].mu/rp)-Math.sqrt(B[c1].mu/rp):null;
  return s+'\nTRANSFER   PHASE '+dg(cur)+' / IDEAL '+dg(ideal)+'   |   WINDOW '+ft(d/Math.abs(dw))+(bd==null?'':'   |   BURN ~'+Math.round(bd)+' m/s')}
-const _hud=hud;window.hud=function(){_hud();const s=plan();if(s)hudEl.textContent+='\n'+s};
+window.__solarHud=()=>{const s=plan();if(s)hudEl.textContent+='\n'+s};
 
 // 5. Map: mark the target even when it is not one of the drawn bodies
-const _mv=mapv;
-window.mapv=function(){_mv();if(tg<0||tg===S.cb)return;const a=ap(tg),m=ap(S.cb),x=innerWidth/2+(a[0]-m[0]-mapX)*zm,y=innerHeight/2-(a[1]-m[1]-mapY)*zm;
- cx.save();cx.strokeStyle=cx.fillStyle='#ffb15c';cx.lineWidth=1.5;cx.setLineDash([4,3]);cx.beginPath();cx.arc(x,y,12,0,TAU);cx.stroke();cx.setLineDash([]);cx.font='12px system-ui,sans-serif';cx.fillText('TARGET '+B[tg].nm,x+16,y+4);cx.restore()};
+window.__solarAfterMap=()=>{if(tg<0||tg===S.cb)return;const a=ap(tg),m=ap(S.cb),x=innerWidth/2+(a[0]-m[0]-mapX)*zm,y=innerHeight/2-(a[1]-m[1]-mapY)*zm;
+ cx.save();cx.strokeStyle=cx.fillStyle='#ffb15c';cx.lineWidth=1.5;cx.setLineDash([4,3]);cx.beginPath();cx.arc(x,y,12,0,TAU);cx.stroke();cx.setLineDash([]);cx.font='12px system-ui,sans-serif';cx.fillText('TARGET '+B[tg].nm,x+16,y+4);cx.restore()};window.__solarSystemLoaded=true;
 })();
